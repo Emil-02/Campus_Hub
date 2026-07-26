@@ -183,6 +183,22 @@ void main() {
     }
   });
 
+  test('session token accessors return current session tokens', () async {
+    final session = Session(
+      accessToken: 'access-token',
+      refreshToken: 'refresh-token',
+      tokenType: 'bearer',
+      user: _user(),
+    );
+    when(() => auth.currentSession).thenReturn(session);
+
+    final Future<String?> accessToken = dataSource.getAccessToken();
+    final Future<String?> refreshToken = dataSource.getRefreshToken();
+
+    expect(await accessToken, 'access-token');
+    expect(await refreshToken, 'refresh-token');
+  });
+
   test('watchAuthState maps users and missing sessions', () async {
     final user = _user();
     final session = Session(
@@ -201,11 +217,37 @@ void main() {
       emitsInOrder(<Object?>[_model(), null, emitsDone]),
     );
   });
+
+  test('watchSignInState ignores token refresh and maps sign-in', () async {
+    final refreshedSession = Session(
+      accessToken: 'refreshed-access-token',
+      tokenType: 'bearer',
+      user: _user(id: 'existing-user-id'),
+    );
+    final signedInSession = Session(
+      accessToken: 'new-access-token',
+      tokenType: 'bearer',
+      user: _user(id: 'new-user-id'),
+    );
+    final authStates = Stream<AuthState>.fromIterable(<AuthState>[
+      AuthState(AuthChangeEvent.tokenRefreshed, refreshedSession),
+      AuthState(AuthChangeEvent.signedIn, signedInSession),
+    ]);
+    when(() => auth.onAuthStateChange).thenAnswer((_) => authStates);
+
+    await expectLater(
+      dataSource.watchSignInState(),
+      emitsInOrder(<Object?>[
+        isA<UserModel>().having((model) => model.id, 'id', 'new-user-id'),
+        emitsDone,
+      ]),
+    );
+  });
 }
 
-User _user({String? email = 'student@campusmate.dev'}) {
+User _user({String id = 'user-id', String? email = 'student@campusmate.dev'}) {
   return User(
-    id: 'user-id',
+    id: id,
     appMetadata: const <String, dynamic>{},
     userMetadata: const <String, dynamic>{
       'full_name': 'Campus Mate',

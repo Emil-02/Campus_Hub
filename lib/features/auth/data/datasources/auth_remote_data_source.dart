@@ -32,8 +32,17 @@ abstract interface class AuthRemoteDataSource {
   /// Returns the current user, if one exists.
   Future<UserModel?> getCurrentUser();
 
+  /// Returns the access token from the current remote session.
+  Future<String?> getAccessToken();
+
+  /// Returns the refresh token from the current remote session.
+  Future<String?> getRefreshToken();
+
   /// Emits the current user whenever authentication state changes.
   Stream<UserModel?> watchAuthState();
+
+  /// Emits users from completed sign-in events.
+  Stream<UserModel?> watchSignInState();
 }
 
 /// Implements remote authentication operations using an injected client.
@@ -116,11 +125,31 @@ final class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   }
 
   @override
+  Future<String?> getAccessToken() async {
+    return _client.auth.currentSession?.accessToken;
+  }
+
+  @override
+  Future<String?> getRefreshToken() async {
+    return _client.auth.currentSession?.refreshToken;
+  }
+
+  @override
   Stream<UserModel?> watchAuthState() {
     return _client.auth.onAuthStateChange.map((state) {
       final user = state.session?.user;
       return user == null ? null : _mapUser(user);
     });
+  }
+
+  @override
+  Stream<UserModel?> watchSignInState() {
+    return _client.auth.onAuthStateChange
+        .where((state) => state.event == AuthChangeEvent.signedIn)
+        .map((state) {
+          final user = state.session?.user;
+          return user == null ? null : _mapUser(user);
+        });
   }
 
   UserModel _mapUser(User user) {
