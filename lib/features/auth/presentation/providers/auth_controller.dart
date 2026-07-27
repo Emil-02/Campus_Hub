@@ -123,16 +123,18 @@ final class AuthController extends Notifier<AuthState> {
   }
 
   /// Sends password reset instructions without changing the user session.
-  Future<void> resetPassword({required String email}) async {
+  Future<bool> resetPassword({required String email}) async {
     final previousState = state;
     state = AuthState.loading(user: previousState.user);
     try {
       await _repository.resetPassword(email: email);
       if (!_disposed) {
-        state = previousState;
+        state = _stateForUser(previousState.user);
       }
+      return true;
     } catch (error) {
       _setFailure(error, user: previousState.user);
+      return false;
     }
   }
 
@@ -143,7 +145,7 @@ final class AuthController extends Notifier<AuthState> {
     try {
       await _repository.resendVerificationEmail();
       if (!_disposed) {
-        state = previousState;
+        state = _stateForUser(previousState.user);
       }
     } catch (error) {
       _setFailure(error, user: previousState.user);
@@ -183,6 +185,15 @@ final class AuthController extends Notifier<AuthState> {
         _safeErrorMessage(error),
         user: user ?? state.user,
       );
+    }
+  }
+
+  /// Clears a public authentication error before another page takes focus.
+  void clearPublicError() {
+    if (!_disposed &&
+        state.status == AuthStatus.failure &&
+        state.user == null) {
+      state = const AuthState.unauthenticated();
     }
   }
 

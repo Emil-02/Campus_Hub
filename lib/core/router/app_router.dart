@@ -3,8 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/auth/presentation/pages/auth_bootstrap_page.dart';
-import '../../features/auth/presentation/pages/auth_placeholder_page.dart';
 import '../../features/auth/presentation/pages/authenticated_home_page.dart';
+import '../../features/auth/presentation/pages/forgot_password_page.dart';
+import '../../features/auth/presentation/pages/login_page.dart';
+import '../../features/auth/presentation/pages/register_page.dart';
 import '../../features/auth/presentation/providers/auth_provider.dart';
 import '../../features/auth/presentation/providers/auth_state.dart';
 import 'route_paths.dart';
@@ -51,17 +53,15 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: RoutePaths.login,
-        builder: (context, state) => const AuthPlaceholderPage(title: 'Login'),
+        builder: (context, state) => const LoginPage(),
       ),
       GoRoute(
         path: RoutePaths.register,
-        builder: (context, state) =>
-            const AuthPlaceholderPage(title: 'Register'),
+        builder: (context, state) => const RegisterPage(),
       ),
       GoRoute(
         path: RoutePaths.forgotPassword,
-        builder: (context, state) =>
-            const AuthPlaceholderPage(title: 'Lupa Password'),
+        builder: (context, state) => const ForgotPasswordPage(),
       ),
       GoRoute(
         path: RoutePaths.home,

@@ -257,6 +257,60 @@ void main() {
     },
   );
 
+  test('resetPassword success clears a previous public failure', () async {
+    var attempts = 0;
+    when(
+      () => repository.resetPassword(email: 'student@campusmate.dev'),
+    ).thenAnswer((_) async {
+      attempts++;
+      if (attempts == 1) {
+        throw StateError('temporary failure');
+      }
+    });
+
+    await controller.resetPassword(email: 'student@campusmate.dev');
+    expect(container.read(authControllerProvider).status, AuthStatus.failure);
+
+    await controller.resetPassword(email: 'student@campusmate.dev');
+
+    expect(
+      container.read(authControllerProvider),
+      const AuthState.unauthenticated(),
+    );
+  });
+
+  test('resetPassword returns a stable action result', () async {
+    when(
+      () => repository.resetPassword(email: 'student@campusmate.dev'),
+    ).thenAnswer((_) async {});
+
+    final succeeded = await controller.resetPassword(
+      email: 'student@campusmate.dev',
+    );
+
+    expect(succeeded, isTrue);
+  });
+
+  test('clearPublicError removes only a failure without a user', () async {
+    when(
+      () => repository.signInWithEmail(
+        email: 'student@campusmate.dev',
+        password: 'password123',
+      ),
+    ).thenThrow(StateError('temporary failure'));
+    await controller.signInWithEmail(
+      email: 'student@campusmate.dev',
+      password: 'password123',
+    );
+
+    controller.clearPublicError();
+
+    expect(
+      container.read(authControllerProvider),
+      const AuthState.unauthenticated(),
+    );
+  });
+
   test(
     'resendVerificationEmail preserves the authenticated user after success',
     () async {
