@@ -18,7 +18,7 @@ void main() async {
   }
 
   final environmentConfig = EnvironmentConfig.fromDotEnv();
-  final startupStatus = await SupabaseService.initialize(environmentConfig);
+  await SupabaseService.initialize(environmentConfig);
 
-  runApp(ProviderScope(child: CampusMateApp(startupStatus: startupStatus)));
+  runApp(const ProviderScope(child: CampusMateApp()));
 }

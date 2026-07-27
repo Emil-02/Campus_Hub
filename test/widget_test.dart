@@ -16,17 +16,14 @@ void main() {
     expect(SupabaseService.client, isNull);
   });
 
-  testWidgets('Foundation text smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
+  testWidgets('Authentication bootstrap smoke test', (
+    WidgetTester tester,
+  ) async {
     await tester.pumpWidget(const ProviderScope(child: CampusMateApp()));
+    await tester.pump();
+    await tester.pump();
 
-    // Verify that the initial foundation text is present.
-    expect(find.text('CampusMate'), findsOneWidget);
-    expect(find.text('Project Foundation Ready'), findsOneWidget);
-    expect(
-      find.text('Development Mode: Supabase environment is not configured.'),
-      findsOneWidget,
-    );
+    expect(find.byType(MaterialApp), findsOneWidget);
     expect(find.byIcon(Icons.add), findsNothing);
     expect(find.text('0'), findsNothing);
   });

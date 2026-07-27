@@ -32,7 +32,9 @@ final class AuthController extends Notifier<AuthState> {
 
   /// Checks the current session once and starts listening for auth changes.
   Future<void> initialize() async {
-    if (_initialized || _disposed) {
+    // A failed bootstrap may be retried, while successful/in-flight bootstrap
+    // remains single-shot to avoid duplicate auth-state subscriptions.
+    if (_disposed || (_initialized && state.status != AuthStatus.failure)) {
       return;
     }
     _initialized = true;
@@ -109,7 +111,7 @@ final class AuthController extends Notifier<AuthState> {
 
   /// Signs out and marks the session as unauthenticated.
   Future<void> signOut() async {
-    state = const AuthState.loading();
+    state = AuthState.loading(user: state.user);
     try {
       await _repository.signOut();
       if (!_disposed) {
@@ -123,28 +125,28 @@ final class AuthController extends Notifier<AuthState> {
   /// Sends password reset instructions without changing the user session.
   Future<void> resetPassword({required String email}) async {
     final previousState = state;
-    state = const AuthState.loading();
+    state = AuthState.loading(user: previousState.user);
     try {
       await _repository.resetPassword(email: email);
       if (!_disposed) {
         state = previousState;
       }
     } catch (error) {
-      _setFailure(error);
+      _setFailure(error, user: previousState.user);
     }
   }
 
   /// Resends verification instructions without removing the current user.
   Future<void> resendVerificationEmail() async {
     final previousState = state;
-    state = const AuthState.loading();
+    state = AuthState.loading(user: previousState.user);
     try {
       await _repository.resendVerificationEmail();
       if (!_disposed) {
         state = previousState;
       }
     } catch (error) {
-      _setFailure(error);
+      _setFailure(error, user: previousState.user);
     }
   }
 
@@ -175,9 +177,12 @@ final class AuthController extends Notifier<AuthState> {
         : AuthState.authenticated(user);
   }
 
-  void _setFailure(Object error) {
+  void _setFailure(Object error, {UserEntity? user}) {
     if (!_disposed) {
-      state = AuthState.failure(_safeErrorMessage(error));
+      state = AuthState.failure(
+        _safeErrorMessage(error),
+        user: user ?? state.user,
+      );
     }
   }
 

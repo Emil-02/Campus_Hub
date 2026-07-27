@@ -12,12 +12,11 @@ final class AuthState extends Equatable {
       user = null,
       errorMessage = null;
 
-  const AuthState.loading()
+  const AuthState.loading({this.user})
     : status = AuthStatus.loading,
-      user = null,
       errorMessage = null;
 
-  const AuthState.authenticated(this.user)
+  const AuthState.authenticated(UserEntity this.user)
     : status = AuthStatus.authenticated,
       errorMessage = null;
 
@@ -26,9 +25,8 @@ final class AuthState extends Equatable {
       user = null,
       errorMessage = null;
 
-  const AuthState.failure(this.errorMessage)
-    : status = AuthStatus.failure,
-      user = null;
+  const AuthState.failure(this.errorMessage, {this.user})
+    : status = AuthStatus.failure;
 
   final AuthStatus status;
   final UserEntity? user;

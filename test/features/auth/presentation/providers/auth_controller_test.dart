@@ -57,6 +57,29 @@ void main() {
     );
   });
 
+  test('initialize can be retried after a bootstrap failure', () async {
+    var attempts = 0;
+    when(() => repository.getCurrentUser()).thenAnswer((_) async {
+      attempts++;
+      if (attempts == 1) {
+        throw StateError('temporary failure');
+      }
+      return null;
+    });
+
+    await controller.initialize();
+    expect(container.read(authControllerProvider).status, AuthStatus.failure);
+
+    await controller.initialize();
+
+    expect(
+      container.read(authControllerProvider),
+      const AuthState.unauthenticated(),
+    );
+    verify(() => repository.getCurrentUser()).called(2);
+    verify(() => repository.watchAuthState()).called(1);
+  });
+
   test('initialize reacts to login and logout stream events', () async {
     when(() => repository.getCurrentUser()).thenAnswer((_) async => null);
     await controller.initialize();
