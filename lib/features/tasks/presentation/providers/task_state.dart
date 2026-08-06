@@ -67,9 +67,7 @@ class TaskState extends Equatable {
       case TaskListFilter.all:
         return tasks;
       case TaskListFilter.active:
-        return tasks
-            .where((task) => !task.isCompleted)
-            .toList(growable: false);
+        return tasks.where((task) => !task.isCompleted).toList(growable: false);
       case TaskListFilter.completed:
         return tasks.where((task) => task.isCompleted).toList(growable: false);
       case TaskListFilter.overdue:

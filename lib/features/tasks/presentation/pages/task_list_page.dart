@@ -163,7 +163,9 @@ final class _TaskListPageState extends ConsumerState<TaskListPage> {
               ),
             ),
           ),
-          Expanded(child: _TaskBody(state: state, page: this)),
+          Expanded(
+            child: _TaskBody(state: state, page: this),
+          ),
         ],
       ),
     );

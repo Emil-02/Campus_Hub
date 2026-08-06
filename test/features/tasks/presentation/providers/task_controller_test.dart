@@ -178,23 +178,27 @@ void main() {
     expect(container.read(taskControllerProvider).tasks, [completed]);
   });
 
-  test('toggleChecklistItem reloads so trigger results become visible',
-      () async {
-    when(
-      () => repository.toggleChecklistItem(
-        id: any(named: 'id'),
-        isCompleted: any(named: 'isCompleted'),
-      ),
-    ).thenAnswer((_) async {});
-    when(() => repository.getTasks()).thenAnswer((_) async => [completedTask]);
+  test(
+    'toggleChecklistItem reloads so trigger results become visible',
+    () async {
+      when(
+        () => repository.toggleChecklistItem(
+          id: any(named: 'id'),
+          isCompleted: any(named: 'isCompleted'),
+        ),
+      ).thenAnswer((_) async {});
+      when(
+        () => repository.getTasks(),
+      ).thenAnswer((_) async => [completedTask]);
 
-    final saved = await container
-        .read(taskControllerProvider.notifier)
-        .toggleChecklistItem(id: 'check-1', isCompleted: true);
+      final saved = await container
+          .read(taskControllerProvider.notifier)
+          .toggleChecklistItem(id: 'check-1', isCompleted: true);
 
-    expect(saved, isTrue);
-    expect(container.read(taskControllerProvider).tasks, [completedTask]);
-  });
+      expect(saved, isTrue);
+      expect(container.read(taskControllerProvider).tasks, [completedTask]);
+    },
+  );
 
   test('deleteTask reloads the list and returns true', () async {
     when(() => repository.deleteTask('task-1')).thenAnswer((_) async {});
