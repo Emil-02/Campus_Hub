@@ -2,14 +2,41 @@ import 'package:campusmate/features/schedules/domain/entities/schedule_entity.da
 import 'package:campusmate/features/schedules/domain/repositories/schedule_repository.dart';
 import 'package:campusmate/features/schedules/presentation/providers/schedule_provider.dart';
 import 'package:campusmate/features/schedules/presentation/providers/schedule_state.dart';
+import 'package:campusmate/services/notification_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 class MockScheduleRepository extends Mock implements ScheduleRepository {}
 
+final class FakeNotificationService implements NotificationService {
+  final scheduledIds = <String>[];
+  final cancelledIds = <String>[];
+
+  @override
+  Future<bool> initialize() async => true;
+
+  @override
+  Future<void> scheduleWeeklyClassReminder({
+    required String scheduleId,
+    required int dayOfWeek,
+    required String startTime,
+    required String courseName,
+    String? room,
+    int minutesBefore = 30,
+  }) async {
+    scheduledIds.add(scheduleId);
+  }
+
+  @override
+  Future<void> cancelScheduleReminder(String scheduleId) async {
+    cancelledIds.add(scheduleId);
+  }
+}
+
 void main() {
   late MockScheduleRepository repository;
+  late FakeNotificationService notifications;
   late ProviderContainer container;
 
   const mondaySchedule = ScheduleEntity(
@@ -30,8 +57,12 @@ void main() {
 
   setUp(() {
     repository = MockScheduleRepository();
+    notifications = FakeNotificationService();
     container = ProviderContainer(
-      overrides: [scheduleRepositoryProvider.overrideWithValue(repository)],
+      overrides: [
+        scheduleRepositoryProvider.overrideWithValue(repository),
+        notificationServiceProvider.overrideWithValue(notifications),
+      ],
     );
   });
 
@@ -141,6 +172,7 @@ void main() {
       container.read(scheduleControllerProvider),
       const ScheduleState.loaded([mondaySchedule]),
     );
+    expect(notifications.scheduledIds, ['schedule-1']);
   });
 
   test('createSchedule keeps previous schedules on failure', () async {
@@ -173,6 +205,7 @@ void main() {
     expect(state.status, ScheduleStatus.failure);
     expect(state.schedules, [mondaySchedule]);
     expect(state.errorMessage, 'Data jadwal tidak valid.');
+    expect(notifications.scheduledIds, isEmpty);
   });
 
   test('deleteSchedule reloads the list and returns true', () async {
@@ -190,5 +223,6 @@ void main() {
       container.read(scheduleControllerProvider),
       const ScheduleState.loaded([]),
     );
+    expect(notifications.cancelledIds, ['schedule-1']);
   });
 }

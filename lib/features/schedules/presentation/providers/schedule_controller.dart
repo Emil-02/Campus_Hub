@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' show PostgrestException;
 
+import '../../../../services/notification_service.dart';
 import '../../domain/entities/schedule_entity.dart';
 import '../../domain/repositories/schedule_repository.dart';
 import 'schedule_dependencies.dart';
@@ -13,6 +14,9 @@ import 'schedule_state.dart';
 /// Coordinates schedule CRUD, conflict checks, and exposes their state.
 final class ScheduleController extends Notifier<ScheduleState> {
   ScheduleRepository get _repository => ref.read(scheduleRepositoryProvider);
+
+  NotificationService get _notifications =>
+      ref.read(notificationServiceProvider);
 
   @override
   ScheduleState build() => const ScheduleState.initial();
@@ -59,13 +63,14 @@ final class ScheduleController extends Notifier<ScheduleState> {
   }) async {
     state = ScheduleState.loaded(state.schedules, isMutating: true);
     try {
-      await _repository.createSchedule(
+      final created = await _repository.createSchedule(
         courseId: courseId,
         dayOfWeek: dayOfWeek,
         startTime: startTime,
         endTime: endTime,
         room: room,
       );
+      unawaited(_registerReminder(created));
       await _reload();
       return true;
     } catch (error) {
@@ -88,7 +93,7 @@ final class ScheduleController extends Notifier<ScheduleState> {
   }) async {
     state = ScheduleState.loaded(state.schedules, isMutating: true);
     try {
-      await _repository.updateSchedule(
+      final updated = await _repository.updateSchedule(
         id: id,
         courseId: courseId,
         dayOfWeek: dayOfWeek,
@@ -96,6 +101,7 @@ final class ScheduleController extends Notifier<ScheduleState> {
         endTime: endTime,
         room: room,
       );
+      unawaited(_registerReminder(updated));
       await _reload();
       return true;
     } catch (error) {
@@ -112,6 +118,7 @@ final class ScheduleController extends Notifier<ScheduleState> {
     state = ScheduleState.loaded(state.schedules, isMutating: true);
     try {
       await _repository.deleteSchedule(id);
+      unawaited(_notifications.cancelScheduleReminder(id));
       await _reload();
       return true;
     } catch (error) {
@@ -126,6 +133,16 @@ final class ScheduleController extends Notifier<ScheduleState> {
   Future<void> _reload() async {
     final schedules = await _repository.getSchedules();
     state = ScheduleState.loaded(schedules);
+  }
+
+  Future<void> _registerReminder(ScheduleEntity schedule) async {
+    await _notifications.scheduleWeeklyClassReminder(
+      scheduleId: schedule.id,
+      dayOfWeek: schedule.dayOfWeek,
+      startTime: schedule.startTime,
+      courseName: schedule.course?.name ?? 'Mata kuliah',
+      room: schedule.room,
+    );
   }
 
   String _safeErrorMessage(Object error) {
