@@ -34,6 +34,8 @@ abstract interface class TaskRemoteDataSource {
 
   Future<void> softDeleteTask(String id);
 
+  Future<void> restoreTask(String id);
+
   Future<void> addChecklistItem({
     required String taskId,
     required String title,
@@ -154,6 +156,11 @@ final class TaskRemoteDataSourceImpl implements TaskRemoteDataSource {
   @override
   Future<void> softDeleteTask(String id) async {
     await _client.from('tasks').update({'is_deleted': true}).eq('id', id);
+  }
+
+  @override
+  Future<void> restoreTask(String id) async {
+    await _client.from('tasks').update({'is_deleted': false}).eq('id', id);
   }
 
   @override

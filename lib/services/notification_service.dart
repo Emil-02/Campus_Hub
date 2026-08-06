@@ -19,6 +19,14 @@ class NotificationService {
     priority: Priority.high,
   );
 
+  static const _taskChannel = AndroidNotificationDetails(
+    'campusmate_task',
+    'Reminder Tugas',
+    channelDescription: 'Pengingat deadline tugas (H-3 dan H-1)',
+    importance: Importance.high,
+    priority: Priority.high,
+  );
+
   /// Initializes timezone data, the plugin, and Android permissions.
   Future<bool> initialize() async {
     if (_initialized) {
@@ -104,10 +112,88 @@ class NotificationService {
     }
   }
 
+  /// TASK-08: schedules H-3 and H-1 reminders at 09:00 before [deadline].
+  /// Reminders already in the past are skipped silently.
+  Future<void> scheduleTaskReminders({
+    required String taskId,
+    required String title,
+    String? courseName,
+    required DateTime deadline,
+  }) async {
+    if (!await initialize()) {
+      return;
+    }
+    final courseInfo = courseName == null || courseName.trim().isEmpty
+        ? 'tugas Anda'
+        : 'mata kuliah ${courseName.trim()}';
+
+    Future<void> scheduleAt({
+      required int id,
+      required int daysBefore,
+      required String notifTitle,
+      required String body,
+    }) async {
+      final remindAt = DateTime(
+        deadline.year,
+        deadline.month,
+        deadline.day,
+        9,
+      ).subtract(Duration(days: daysBefore));
+      if (remindAt.isBefore(DateTime.now())) {
+        return;
+      }
+      try {
+        await _plugin.zonedSchedule(
+          id: id,
+          title: notifTitle,
+          body: body,
+          scheduledDate: tz.TZDateTime.from(remindAt, tz.local),
+          notificationDetails: const NotificationDetails(android: _taskChannel),
+          androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        );
+      } catch (error) {
+        debugPrint('Failed to schedule task reminder: $error');
+      }
+    }
+
+    await scheduleAt(
+      id: notificationIdForTask(taskId, daysBefore: 3),
+      daysBefore: 3,
+      notifTitle: 'Pengingat: Tugas $title hampir mendekati deadline.',
+      body: 'Dikumpulkan 3 hari lagi untuk $courseInfo.',
+    );
+    await scheduleAt(
+      id: notificationIdForTask(taskId, daysBefore: 1),
+      daysBefore: 1,
+      notifTitle: 'BESOK Deadline: $title!',
+      body: 'Pastikan $courseInfo sudah selesai dikerjakan.',
+    );
+  }
+
+  /// T-118: cancels both H-3 and H-1 reminders for [taskId].
+  Future<void> cancelTaskReminders(String taskId) async {
+    if (!await initialize()) {
+      return;
+    }
+    try {
+      await _plugin.cancel(id: notificationIdForTask(taskId, daysBefore: 3));
+      await _plugin.cancel(id: notificationIdForTask(taskId, daysBefore: 1));
+    } catch (error) {
+      debugPrint('Failed to cancel task reminders: $error');
+    }
+  }
+
   /// Stable, reproducible 31-bit id so reminders can be cancelled later.
   @visibleForTesting
   static int notificationIdForSchedule(String scheduleId) {
     return 0x40000000 | (scheduleId.hashCode & 0x3FFFFFFF);
+  }
+
+  /// Distinct namespaces keep H-3 and H-1 ids from ever colliding.
+  @visibleForTesting
+  static int notificationIdForTask(String taskId, {required int daysBefore}) {
+    final namespace = daysBefore == 3 ? 0x10000000 : 0x20000000;
+    return namespace | (taskId.hashCode & 0x0FFFFFFF);
   }
 
   DateTime _nextInstanceOfWeekday(int dayOfWeek, int hour, int minute) {

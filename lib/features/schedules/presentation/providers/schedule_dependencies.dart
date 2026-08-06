@@ -1,15 +1,12 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/network/supabase_provider.dart';
-import '../../../../services/notification_service.dart';
 import '../../data/datasources/schedule_remote_data_source.dart';
 import '../../data/repositories/schedule_repository_impl.dart';
 import '../../domain/repositories/schedule_repository.dart';
 
-/// Provides the local notification service for schedule reminders.
-final notificationServiceProvider = Provider<NotificationService>((ref) {
-  return NotificationService();
-});
+export '../../../../services/service_providers.dart'
+    show notificationServiceProvider;
 
 /// Provides the remote schedule datasource from the existing client.
 final scheduleRemoteDataSourceProvider = Provider<ScheduleRemoteDataSource>((

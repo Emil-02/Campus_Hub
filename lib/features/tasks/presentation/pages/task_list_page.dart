@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../courses/presentation/providers/course_provider.dart';
 import '../../domain/entities/task_entity.dart';
 import '../providers/task_provider.dart';
 import '../providers/task_state.dart';
@@ -22,6 +23,7 @@ final class _TaskListPageState extends ConsumerState<TaskListPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         ref.read(taskControllerProvider.notifier).loadTasks();
+        ref.read(courseControllerProvider.notifier).loadCourses();
       }
     });
   }
@@ -90,7 +92,27 @@ final class _TaskListPageState extends ConsumerState<TaskListPage> {
     final deleted = await ref
         .read(taskControllerProvider.notifier)
         .deleteTask(task.id);
-    _showResultSnackBar(deleted, 'Tugas dihapus.');
+    if (!mounted) {
+      return;
+    }
+    if (!deleted) {
+      _showResultSnackBar(false, '');
+      return;
+    }
+    // T-119: give a short undo window after the soft delete.
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: const Text('Tugas dihapus.'),
+          duration: const Duration(seconds: 5),
+          action: SnackBarAction(
+            label: 'Urungkan',
+            onPressed: () =>
+                ref.read(taskControllerProvider.notifier).restoreTask(task.id),
+          ),
+        ),
+      );
   }
 
   Future<void> _toggleCompleted(TaskEntity task, bool completed) async {
@@ -115,6 +137,14 @@ final class _TaskListPageState extends ConsumerState<TaskListPage> {
     );
   }
 
+  void _openSortFilterSheet() {
+    showModalBottomSheet<void>(
+      context: context,
+      useSafeArea: true,
+      builder: (_) => const _SortFilterSheet(),
+    );
+  }
+
   void _showResultSnackBar(bool success, String successMessage) {
     if (!mounted) {
       return;
@@ -133,7 +163,20 @@ final class _TaskListPageState extends ConsumerState<TaskListPage> {
     final state = ref.watch(taskControllerProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Tugas')),
+      appBar: AppBar(
+        title: const Text('Tugas'),
+        actions: [
+          IconButton(
+            key: const ValueKey('task-sort-filter'),
+            tooltip: 'Urutkan & filter',
+            onPressed: _openSortFilterSheet,
+            icon: Badge(
+              isLabelVisible: state.hasExtraFilters,
+              child: const Icon(Icons.tune),
+            ),
+          ),
+        ],
+      ),
       floatingActionButton: FloatingActionButton.extended(
         key: const ValueKey('task-add-fab'),
         onPressed: state.isMutating ? null : _addTask,
@@ -441,5 +484,109 @@ final class _TaskDetailSheetState extends ConsumerState<_TaskDetailSheet> {
     await ref
         .read(taskControllerProvider.notifier)
         .addChecklistItem(taskId: taskId, title: title);
+  }
+}
+
+/// Bottom sheet with sort options plus course/priority filters (TASK-09).
+final class _SortFilterSheet extends ConsumerWidget {
+  const _SortFilterSheet();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final state = ref.watch(taskControllerProvider);
+    final controller = ref.read(taskControllerProvider.notifier);
+    final courses = ref.watch(courseControllerProvider).courses;
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Urutkan & Filter',
+                  style: theme.textTheme.titleLarge,
+                ),
+              ),
+              if (state.hasExtraFilters)
+                TextButton(
+                  key: const ValueKey('task-filter-reset'),
+                  onPressed: () {
+                    controller
+                      ..setCourseFilter(null)
+                      ..setPriorityFilter(null);
+                  },
+                  child: const Text('Reset'),
+                ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text('Urutkan', style: theme.textTheme.titleSmall),
+          RadioGroup<TaskSortOption>(
+            groupValue: state.sort,
+            onChanged: (value) {
+              if (value != null) {
+                controller.setSort(value);
+              }
+            },
+            child: Column(
+              children: [
+                for (final option in TaskSortOption.values)
+                  RadioListTile<TaskSortOption>(
+                    key: ValueKey('task-sort-${option.name}'),
+                    value: option,
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(option.label),
+                  ),
+              ],
+            ),
+          ),
+          const Divider(height: 24),
+          Text('Mata kuliah', style: theme.textTheme.titleSmall),
+          const SizedBox(height: 8),
+          DropdownButtonFormField<String?>(
+            key: const ValueKey('task-filter-course'),
+            initialValue: state.courseIdFilter,
+            decoration: const InputDecoration(isDense: true),
+            items: [
+              const DropdownMenuItem<String?>(
+                value: null,
+                child: Text('Semua mata kuliah'),
+              ),
+              for (final course in courses)
+                DropdownMenuItem(
+                  value: course.id,
+                  child: Text(course.name, overflow: TextOverflow.ellipsis),
+                ),
+            ],
+            onChanged: controller.setCourseFilter,
+          ),
+          const SizedBox(height: 16),
+          Text('Prioritas', style: theme.textTheme.titleSmall),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            children: [
+              ChoiceChip(
+                key: const ValueKey('task-filter-priority-all'),
+                label: const Text('Semua'),
+                selected: state.priorityFilter == null,
+                onSelected: (_) => controller.setPriorityFilter(null),
+              ),
+              for (final priority in TaskPriority.values)
+                ChoiceChip(
+                  key: ValueKey('task-filter-priority-${priority.name}'),
+                  label: Text(priority.label),
+                  selected: state.priorityFilter == priority,
+                  onSelected: (_) => controller.setPriorityFilter(priority),
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
   }
 }

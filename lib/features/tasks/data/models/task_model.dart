@@ -63,6 +63,7 @@ final class TaskModel extends TaskEntity {
     super.status,
     super.completionPercentage,
     super.completedAt,
+    super.createdAt,
     super.checklist,
   });
 
@@ -92,6 +93,7 @@ final class TaskModel extends TaskEntity {
       status: TaskStatus.fromDb(json['status'] as String? ?? 'todo'),
       completionPercentage: _intOrZero(json['completion_percentage']),
       completedAt: _nullableDate(json, 'completed_at'),
+      createdAt: _nullableDate(json, 'created_at'),
       checklist: checklist,
     );
   }
@@ -108,6 +110,7 @@ final class TaskModel extends TaskEntity {
       status: status,
       completionPercentage: completionPercentage,
       completedAt: completedAt,
+      createdAt: createdAt,
       checklist: checklist,
     );
   }

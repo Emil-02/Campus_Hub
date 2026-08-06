@@ -32,6 +32,9 @@ abstract interface class TaskRepository {
   /// BR-06: soft delete.
   Future<void> deleteTask(String id);
 
+  /// T-119: restores a soft-deleted task (undo).
+  Future<void> restoreTask(String id);
+
   Future<void> addChecklistItem({
     required String taskId,
     required String title,

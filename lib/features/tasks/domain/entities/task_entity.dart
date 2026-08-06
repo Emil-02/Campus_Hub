@@ -71,6 +71,7 @@ class TaskEntity extends Equatable {
     this.status = TaskStatus.todo,
     this.completionPercentage = 0,
     this.completedAt,
+    this.createdAt,
     this.checklist = const [],
   });
 
@@ -84,6 +85,7 @@ class TaskEntity extends Equatable {
   final TaskStatus status;
   final int completionPercentage;
   final DateTime? completedAt;
+  final DateTime? createdAt;
   final List<ChecklistEntity> checklist;
 
   bool get isCompleted => status == TaskStatus.completed;
@@ -104,6 +106,7 @@ class TaskEntity extends Equatable {
     status,
     completionPercentage,
     completedAt,
+    createdAt,
     checklist,
   ];
 }

@@ -32,6 +32,17 @@ final class FakeNotificationService implements NotificationService {
   Future<void> cancelScheduleReminder(String scheduleId) async {
     cancelledIds.add(scheduleId);
   }
+
+  @override
+  Future<void> scheduleTaskReminders({
+    required String taskId,
+    required String title,
+    String? courseName,
+    required DateTime deadline,
+  }) async {}
+
+  @override
+  Future<void> cancelTaskReminders(String taskId) async {}
 }
 
 void main() {

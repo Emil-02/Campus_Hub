@@ -72,6 +72,11 @@ final class TaskRepositoryImpl implements TaskRepository {
   }
 
   @override
+  Future<void> restoreTask(String id) {
+    return _remoteDataSource.restoreTask(id);
+  }
+
+  @override
   Future<void> addChecklistItem({
     required String taskId,
     required String title,

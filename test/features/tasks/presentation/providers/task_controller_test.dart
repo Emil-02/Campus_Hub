@@ -2,11 +2,49 @@ import 'package:campusmate/features/tasks/domain/entities/task_entity.dart';
 import 'package:campusmate/features/tasks/domain/repositories/task_repository.dart';
 import 'package:campusmate/features/tasks/presentation/providers/task_provider.dart';
 import 'package:campusmate/features/tasks/presentation/providers/task_state.dart';
+import 'package:campusmate/services/notification_service.dart';
+import 'package:campusmate/services/service_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 class MockTaskRepository extends Mock implements TaskRepository {}
+
+final class FakeTaskNotificationService implements NotificationService {
+  final scheduledTaskIds = <String>[];
+  final cancelledTaskIds = <String>[];
+
+  @override
+  Future<bool> initialize() async => true;
+
+  @override
+  Future<void> scheduleWeeklyClassReminder({
+    required String scheduleId,
+    required int dayOfWeek,
+    required String startTime,
+    required String courseName,
+    String? room,
+    int minutesBefore = 30,
+  }) async {}
+
+  @override
+  Future<void> cancelScheduleReminder(String scheduleId) async {}
+
+  @override
+  Future<void> scheduleTaskReminders({
+    required String taskId,
+    required String title,
+    String? courseName,
+    required DateTime deadline,
+  }) async {
+    scheduledTaskIds.add(taskId);
+  }
+
+  @override
+  Future<void> cancelTaskReminders(String taskId) async {
+    cancelledTaskIds.add(taskId);
+  }
+}
 
 void main() {
   setUpAll(() {
@@ -14,6 +52,7 @@ void main() {
   });
 
   late MockTaskRepository repository;
+  late FakeTaskNotificationService notifications;
   late ProviderContainer container;
 
   final activeTask = TaskEntity(
@@ -36,8 +75,12 @@ void main() {
 
   setUp(() {
     repository = MockTaskRepository();
+    notifications = FakeTaskNotificationService();
     container = ProviderContainer(
-      overrides: [taskRepositoryProvider.overrideWithValue(repository)],
+      overrides: [
+        taskRepositoryProvider.overrideWithValue(repository),
+        notificationServiceProvider.overrideWithValue(notifications),
+      ],
     );
   });
 
@@ -74,9 +117,10 @@ void main() {
     final controller = container.read(taskControllerProvider.notifier);
 
     controller.setFilter(TaskListFilter.active);
+    // Default sort = deadline: the overdue task's date comes first.
     expect(container.read(taskControllerProvider).visibleTasks, [
-      activeTask,
       overdueTask,
+      activeTask,
     ]);
 
     controller.setFilter(TaskListFilter.completed);
@@ -86,6 +130,52 @@ void main() {
 
     controller.setFilter(TaskListFilter.overdue);
     expect(container.read(taskControllerProvider).visibleTasks, [overdueTask]);
+  });
+
+  test('sort by name and priority reorders the visible list', () async {
+    when(
+      () => repository.getTasks(),
+    ).thenAnswer((_) async => [activeTask, completedTask, overdueTask]);
+    await container.read(taskControllerProvider.notifier).loadTasks();
+    final controller = container.read(taskControllerProvider.notifier);
+
+    controller.setSort(TaskSortOption.name);
+    expect(
+      container.read(taskControllerProvider).visibleTasks.first.title,
+      'Esai etika',
+    );
+
+    controller.setSort(TaskSortOption.priority);
+    // activeTask is the only high-priority entry.
+    expect(
+      container.read(taskControllerProvider).visibleTasks.first,
+      activeTask,
+    );
+  });
+
+  test('course and priority filters narrow the visible list', () async {
+    const courseTask = TaskEntity(
+      id: 'task-4',
+      courseId: 'course-1',
+      title: 'Tugas MK',
+      priority: TaskPriority.urgent,
+    );
+    when(
+      () => repository.getTasks(),
+    ).thenAnswer((_) async => [activeTask, courseTask]);
+    await container.read(taskControllerProvider.notifier).loadTasks();
+    final controller = container.read(taskControllerProvider.notifier);
+
+    controller.setCourseFilter('course-1');
+    expect(container.read(taskControllerProvider).visibleTasks, [courseTask]);
+    expect(container.read(taskControllerProvider).hasExtraFilters, isTrue);
+
+    controller.setCourseFilter(null);
+    controller.setPriorityFilter(TaskPriority.high);
+    expect(container.read(taskControllerProvider).visibleTasks, [activeTask]);
+
+    controller.setPriorityFilter(null);
+    expect(container.read(taskControllerProvider).hasExtraFilters, isFalse);
   });
 
   test('createTask forwards checklist titles and reloads', () async {
@@ -210,6 +300,62 @@ void main() {
 
     expect(deleted, isTrue);
     expect(container.read(taskControllerProvider).tasks, isEmpty);
+    expect(notifications.cancelledTaskIds, contains('task-1'));
+  });
+
+  test('createTask schedules reminders for tasks with a deadline', () async {
+    when(
+      () => repository.createTask(
+        title: any(named: 'title'),
+        description: any(named: 'description'),
+        deadline: any(named: 'deadline'),
+        priority: any(named: 'priority'),
+        courseId: any(named: 'courseId'),
+        checklistTitles: any(named: 'checklistTitles'),
+      ),
+    ).thenAnswer((_) async => activeTask);
+    when(() => repository.getTasks()).thenAnswer((_) async => [activeTask]);
+
+    await container
+        .read(taskControllerProvider.notifier)
+        .createTask(title: 'Laporan praktikum', priority: TaskPriority.high);
+
+    expect(notifications.scheduledTaskIds, ['task-1']);
+  });
+
+  test('completing a task cancels its reminders', () async {
+    when(() => repository.getTasks()).thenAnswer((_) async => [activeTask]);
+    await container.read(taskControllerProvider.notifier).loadTasks();
+
+    final completed = TaskEntity(
+      id: activeTask.id,
+      title: activeTask.title,
+      status: TaskStatus.completed,
+      deadline: activeTask.deadline,
+    );
+    when(
+      () => repository.setTaskCompleted(id: 'task-1', completed: true),
+    ).thenAnswer((_) async => completed);
+
+    await container
+        .read(taskControllerProvider.notifier)
+        .setTaskCompleted(id: 'task-1', completed: true);
+
+    expect(notifications.cancelledTaskIds, contains('task-1'));
+    expect(notifications.scheduledTaskIds, isEmpty);
+  });
+
+  test('restoreTask reloads and reschedules reminders', () async {
+    when(() => repository.restoreTask('task-1')).thenAnswer((_) async {});
+    when(() => repository.getTasks()).thenAnswer((_) async => [activeTask]);
+
+    final restored = await container
+        .read(taskControllerProvider.notifier)
+        .restoreTask('task-1');
+
+    expect(restored, isTrue);
+    expect(container.read(taskControllerProvider).tasks, [activeTask]);
+    expect(notifications.scheduledTaskIds, ['task-1']);
   });
 
   test('addChecklistItem appends with the next sort order', () async {
