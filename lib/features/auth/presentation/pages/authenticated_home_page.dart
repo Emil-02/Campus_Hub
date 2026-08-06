@@ -68,10 +68,12 @@ final class AuthenticatedHomePage extends ConsumerWidget {
               onTap: () => context.push(RoutePaths.schedules),
             ),
             const SizedBox(height: 8),
-            const _MenuCard(
+            _MenuCard(
+              key: const ValueKey('home-menu-tasks'),
               icon: Icons.task_alt_outlined,
               title: 'Tugas',
-              subtitle: 'Segera hadir',
+              subtitle: 'Deadline, prioritas, dan checklist',
+              onTap: () => context.push(RoutePaths.tasks),
             ),
             const SizedBox(height: 8),
             const _MenuCard(
