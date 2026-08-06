@@ -1,6 +1,8 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' show AuthException;
 
 import '../../domain/entities/user_entity.dart';
 import '../../domain/repositories/auth_repository.dart';
@@ -198,6 +200,10 @@ final class AuthController extends Notifier<AuthState> {
   }
 
   String _safeErrorMessage(Object error) {
+    debugPrint('Auth error: $error');
+    if (error is AuthException) {
+      return _authExceptionMessage(error);
+    }
     if (error is TimeoutException) {
       return 'Proses autentikasi habis waktu.';
     }
@@ -208,5 +214,35 @@ final class AuthController extends Notifier<AuthState> {
       return 'Proses autentikasi tidak dapat diselesaikan.';
     }
     return 'Terjadi kesalahan autentikasi.';
+  }
+
+  String _authExceptionMessage(AuthException error) {
+    final code = error.code ?? '';
+    final message = error.message.toLowerCase();
+    if (code == 'invalid_credentials' ||
+        message.contains('invalid login credentials')) {
+      return 'Email atau password salah.';
+    }
+    if (code == 'email_not_confirmed' ||
+        message.contains('email not confirmed')) {
+      return 'Email belum dikonfirmasi. Buka tautan verifikasi di kotak masuk email Anda.';
+    }
+    if (code == 'user_already_exists' ||
+        message.contains('already registered')) {
+      return 'Email ini sudah terdaftar. Silakan login.';
+    }
+    if (code == 'weak_password' || message.contains('password should be')) {
+      return 'Password terlalu lemah (minimal 6 karakter).';
+    }
+    if (code == 'over_email_send_rate_limit' ||
+        message.contains('rate limit')) {
+      return 'Terlalu banyak percobaan. Tunggu sebentar lalu coba lagi.';
+    }
+    if (message.contains('failed host lookup') ||
+        message.contains('socketexception') ||
+        message.contains('connection')) {
+      return 'Tidak dapat terhubung ke server. Periksa koneksi internet.';
+    }
+    return 'Autentikasi gagal: ${error.message}';
   }
 }

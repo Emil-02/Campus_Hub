@@ -9,6 +9,10 @@ import '../../features/auth/presentation/pages/login_page.dart';
 import '../../features/auth/presentation/pages/register_page.dart';
 import '../../features/auth/presentation/providers/auth_provider.dart';
 import '../../features/auth/presentation/providers/auth_state.dart';
+import '../../features/courses/presentation/pages/course_management_page.dart';
+import '../../features/profile/presentation/pages/change_password_page.dart';
+import '../../features/profile/presentation/pages/edit_profile_page.dart';
+import '../../features/profile/presentation/pages/profile_page.dart';
 import 'route_paths.dart';
 
 /// Notifies GoRouter when the Riverpod authentication state changes.
@@ -66,6 +70,22 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: RoutePaths.home,
         builder: (context, state) => const AuthenticatedHomePage(),
+      ),
+      GoRoute(
+        path: RoutePaths.courses,
+        builder: (context, state) => const CourseManagementPage(),
+      ),
+      GoRoute(
+        path: RoutePaths.profile,
+        builder: (context, state) => const ProfilePage(),
+      ),
+      GoRoute(
+        path: RoutePaths.editProfile,
+        builder: (context, state) => const EditProfilePage(),
+      ),
+      GoRoute(
+        path: RoutePaths.changePassword,
+        builder: (context, state) => const ChangePasswordPage(),
       ),
     ],
   );

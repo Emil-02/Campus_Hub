@@ -57,6 +57,7 @@ void main() {
     expect(find.text('Halo, Campus Student'), findsOneWidget);
     expect(find.text(user.email), findsOneWidget);
     expect(find.text('Belum terverifikasi'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('Kirim Ulang Verifikasi'), 200);
     expect(find.text('Kirim Ulang Verifikasi'), findsOneWidget);
   });
 
@@ -88,6 +89,7 @@ void main() {
     ).thenAnswer((_) => resendCompleter.future);
     await pumpSubject(tester);
 
+    await tester.scrollUntilVisible(find.text('Logout'), 200);
     await tester.tap(find.text('Kirim Ulang Verifikasi'));
     await tester.pump();
 
@@ -109,6 +111,9 @@ void main() {
     when(() => repository.signOut()).thenAnswer((_) async {});
     await pumpSubject(tester);
 
+    await tester.scrollUntilVisible(find.text('Logout'), 200);
+    await tester.ensureVisible(find.text('Logout'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Logout'));
     await tester.pump();
 
