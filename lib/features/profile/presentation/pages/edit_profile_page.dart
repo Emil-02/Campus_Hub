@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../providers/profile_provider.dart';
-import '../providers/profile_state.dart';
 
 const _degreeLevels = ['D3', 'D4', 'S1'];
 

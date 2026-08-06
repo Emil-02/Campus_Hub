@@ -64,7 +64,7 @@ void main() {
   });
 
   test('conflict model clips times and reads RPC fields', () {
-    final conflict = ScheduleConflictModel.fromJson(<String, dynamic>{
+    final conflict = ScheduleConflictModel.fromJson(const <String, dynamic>{
       'conflicting_id': 'schedule-9',
       'course_name': 'Basis Data',
       'start_time': '08:30:00',

@@ -209,10 +209,10 @@ void main() {
   });
 
   test('addChecklistItem appends with the next sort order', () async {
-    final withChecklist = TaskEntity(
+    const withChecklist = TaskEntity(
       id: 'task-1',
       title: 'Laporan praktikum',
-      checklist: const [
+      checklist: [
         ChecklistEntity(
           id: 'check-1',
           taskId: 'task-1',
