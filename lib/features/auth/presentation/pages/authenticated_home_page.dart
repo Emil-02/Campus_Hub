@@ -60,10 +60,12 @@ final class AuthenticatedHomePage extends ConsumerWidget {
               onTap: () => context.push(RoutePaths.courses),
             ),
             const SizedBox(height: 8),
-            const _MenuCard(
+            _MenuCard(
+              key: const ValueKey('home-menu-schedules'),
               icon: Icons.calendar_month_outlined,
               title: 'Jadwal Kuliah',
-              subtitle: 'Segera hadir',
+              subtitle: 'Timetable mingguan & deteksi bentrok',
+              onTap: () => context.push(RoutePaths.schedules),
             ),
             const SizedBox(height: 8),
             const _MenuCard(
