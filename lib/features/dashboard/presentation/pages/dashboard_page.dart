@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 
 import '../../../../core/router/route_paths.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../calendar/domain/entities/calendar_event_entity.dart';
 import '../../../courses/presentation/widgets/course_color_picker.dart';
 import '../../../schedules/domain/entities/schedule_entity.dart';
 import '../../../tasks/domain/entities/task_entity.dart';
@@ -91,6 +93,22 @@ final class _DashboardPageState extends ConsumerState<DashboardPage> {
                 else
                   for (final task in state.upcomingTasks) ...[
                     _DeadlineCard(task: task),
+                    const SizedBox(height: 8),
+                  ],
+                const SizedBox(height: 16),
+                _SectionHeader(
+                  title: 'Event Mendatang',
+                  onSeeAll: () => context.push(RoutePaths.calendar),
+                ),
+                const SizedBox(height: 8),
+                if (state.upcomingEvents.isEmpty)
+                  const _EmptyHint(
+                    icon: Icons.event_note_outlined,
+                    message: 'Tidak ada event dalam waktu dekat.',
+                  )
+                else
+                  for (final event in state.upcomingEvents) ...[
+                    _UpcomingEventCard(event: event),
                     const SizedBox(height: 8),
                   ],
                 const SizedBox(height: 16),
@@ -222,11 +240,11 @@ final class _GreetingHeader extends ConsumerWidget {
   }
 }
 
-final class _QuickActions extends StatelessWidget {
+final class _QuickActions extends ConsumerWidget {
   const _QuickActions();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final actions = [
       (
         'dashboard-action-capture',
@@ -275,7 +293,15 @@ final class _QuickActions extends StatelessWidget {
               key: ValueKey(key),
               icon: icon,
               label: label,
-              onTap: () => context.push(route),
+              onTap: () async {
+                final saved = await context.push<bool>(route);
+                // Smart capture may add tasks/events shown on this page.
+                if (saved == true && context.mounted) {
+                  await ref
+                      .read(dashboardControllerProvider.notifier)
+                      .loadDashboard();
+                }
+              },
             ),
             const SizedBox(width: 16),
           ],
@@ -499,6 +525,79 @@ final class _DeadlineCard extends StatelessWidget {
                   ),
                 ),
               ),
+      ),
+    );
+  }
+}
+
+/// DASH: one upcoming calendar event with a date box and type label.
+final class _UpcomingEventCard extends StatelessWidget {
+  const _UpcomingEventCard({required this.event});
+
+  final CalendarEventEntity event;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final accent = courseColorFromHex(event.color);
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final isToday = event.eventDate == today;
+    final timeLabel = event.isAllDay || event.eventTime == null
+        ? 'Sepanjang hari'
+        : 'Pukul ${event.eventTime}';
+
+    return Card(
+      child: ListTile(
+        onTap: () => context.push(RoutePaths.calendar),
+        leading: Container(
+          width: 48,
+          padding: const EdgeInsets.symmetric(vertical: 6),
+          decoration: BoxDecoration(
+            color: accent.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                '${event.eventDate.day}',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  color: accent,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              Text(
+                DateFormat('MMM', 'id_ID').format(event.eventDate),
+                style: theme.textTheme.labelSmall?.copyWith(color: accent),
+              ),
+            ],
+          ),
+        ),
+        title: Text(
+          event.title,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: theme.textTheme.titleMedium,
+        ),
+        subtitle: Text(
+          isToday ? 'Hari ini • $timeLabel' : timeLabel,
+          style: theme.textTheme.bodySmall,
+        ),
+        trailing: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+          decoration: BoxDecoration(
+            color: accent.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(4),
+          ),
+          child: Text(
+            event.eventType.label,
+            style: theme.textTheme.labelMedium?.copyWith(
+              color: accent,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
       ),
     );
   }

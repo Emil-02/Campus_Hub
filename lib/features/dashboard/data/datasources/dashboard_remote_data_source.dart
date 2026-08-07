@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../calendar/data/models/calendar_event_model.dart';
 import '../../../schedules/data/models/schedule_model.dart';
 import '../../../tasks/data/models/task_model.dart';
 import '../models/dashboard_stats_model.dart';
@@ -9,6 +10,8 @@ abstract interface class DashboardRemoteDataSource {
   Future<List<ScheduleModel>> getTodaySchedules();
 
   Future<List<TaskModel>> getUpcomingDeadlines();
+
+  Future<List<CalendarEventModel>> getUpcomingEvents();
 
   Future<DashboardStatsModel> getStatistics();
 }
@@ -42,6 +45,23 @@ final class DashboardRemoteDataSourceImpl implements DashboardRemoteDataSource {
         .order('deadline', ascending: true)
         .limit(5);
     return rows.map(TaskModel.fromJson).toList(growable: false);
+  }
+
+  @override
+  Future<List<CalendarEventModel>> getUpcomingEvents() async {
+    final now = DateTime.now();
+    final today =
+        '${now.year.toString().padLeft(4, '0')}-'
+        '${now.month.toString().padLeft(2, '0')}-'
+        '${now.day.toString().padLeft(2, '0')}';
+    final rows = await _client
+        .from('calendar_events')
+        .select()
+        .gte('event_date', today)
+        .order('event_date', ascending: true)
+        .order('event_time', ascending: true, nullsFirst: true)
+        .limit(5);
+    return rows.map(CalendarEventModel.fromJson).toList(growable: false);
   }
 
   @override

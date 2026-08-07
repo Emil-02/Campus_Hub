@@ -1,3 +1,4 @@
+import '../../../calendar/domain/entities/calendar_event_entity.dart';
 import '../../../schedules/domain/entities/schedule_entity.dart';
 import '../../../tasks/domain/entities/task_entity.dart';
 import '../../domain/entities/dashboard_stats_entity.dart';
@@ -19,6 +20,12 @@ final class DashboardRepositoryImpl implements DashboardRepository {
   @override
   Future<List<TaskEntity>> getUpcomingDeadlines() async {
     final models = await _remoteDataSource.getUpcomingDeadlines();
+    return models.map((model) => model.toEntity()).toList(growable: false);
+  }
+
+  @override
+  Future<List<CalendarEventEntity>> getUpcomingEvents() async {
+    final models = await _remoteDataSource.getUpcomingEvents();
     return models.map((model) => model.toEntity()).toList(growable: false);
   }
 

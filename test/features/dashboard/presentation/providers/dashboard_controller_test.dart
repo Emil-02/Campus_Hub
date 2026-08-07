@@ -1,3 +1,4 @@
+import 'package:campusmate/features/calendar/domain/entities/calendar_event_entity.dart';
 import 'package:campusmate/features/dashboard/domain/entities/dashboard_stats_entity.dart';
 import 'package:campusmate/features/dashboard/domain/repositories/dashboard_repository.dart';
 import 'package:campusmate/features/dashboard/presentation/providers/dashboard_provider.dart';
@@ -32,6 +33,13 @@ void main() {
     completedThisWeek: 2,
     overdue: 1,
   );
+  final event = CalendarEventEntity(
+    id: 'event-1',
+    title: 'Seminar proposal',
+    eventDate: DateTime.now().add(const Duration(days: 2)),
+    eventTime: '13:00',
+    eventType: CalendarEventType.academic,
+  );
 
   setUp(() {
     repository = MockDashboardRepository();
@@ -49,6 +57,7 @@ void main() {
     when(
       () => repository.getUpcomingDeadlines(),
     ).thenAnswer((_) async => [task]);
+    when(() => repository.getUpcomingEvents()).thenAnswer((_) async => [event]);
     when(() => repository.getStatistics()).thenAnswer((_) async => stats);
 
     await container.read(dashboardControllerProvider.notifier).loadDashboard();
@@ -57,6 +66,7 @@ void main() {
     expect(state.status, DashboardStatus.loaded);
     expect(state.todaySchedules, [schedule]);
     expect(state.upcomingTasks, [task]);
+    expect(state.upcomingEvents, [event]);
     expect(state.stats, stats);
   });
 
@@ -66,6 +76,9 @@ void main() {
     ).thenThrow(StateError('no session'));
     when(
       () => repository.getUpcomingDeadlines(),
+    ).thenAnswer((_) async => const []);
+    when(
+      () => repository.getUpcomingEvents(),
     ).thenAnswer((_) async => const []);
     when(
       () => repository.getStatistics(),
@@ -85,6 +98,7 @@ void main() {
     when(
       () => repository.getUpcomingDeadlines(),
     ).thenAnswer((_) async => [task]);
+    when(() => repository.getUpcomingEvents()).thenAnswer((_) async => [event]);
     when(() => repository.getStatistics()).thenAnswer((_) async => stats);
     await container.read(dashboardControllerProvider.notifier).loadDashboard();
 
@@ -98,6 +112,7 @@ void main() {
     expect(state.status, DashboardStatus.failure);
     expect(state.todaySchedules, [schedule]);
     expect(state.upcomingTasks, [task]);
+    expect(state.upcomingEvents, [event]);
     expect(state.stats, stats);
     expect(state.errorMessage, 'Data ringkasan tidak valid.');
   });

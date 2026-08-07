@@ -50,10 +50,12 @@ final class DashboardController extends Notifier<DashboardState> {
     try {
       final schedulesFuture = _repository.getTodaySchedules();
       final tasksFuture = _repository.getUpcomingDeadlines();
+      final eventsFuture = _repository.getUpcomingEvents();
       final statsFuture = _repository.getStatistics();
       state = DashboardState.loaded(
         todaySchedules: await schedulesFuture,
         upcomingTasks: await tasksFuture,
+        upcomingEvents: await eventsFuture,
         stats: await statsFuture,
       );
     } catch (error) {
@@ -61,6 +63,7 @@ final class DashboardController extends Notifier<DashboardState> {
         _safeErrorMessage(error),
         todaySchedules: state.todaySchedules,
         upcomingTasks: state.upcomingTasks,
+        upcomingEvents: state.upcomingEvents,
         stats: state.stats,
       );
     }
