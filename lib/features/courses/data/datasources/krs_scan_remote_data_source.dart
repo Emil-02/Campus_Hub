@@ -26,7 +26,7 @@ final class GeminiKrsScanDataSource implements KrsScanRemoteDataSource {
   GeminiKrsScanDataSource({
     required String? apiKey,
     http.Client? client,
-    String model = 'gemini-2.5-flash',
+    String model = 'gemini-flash-latest',
   }) : _apiKey = apiKey,
        _client = client ?? http.Client(),
        _model = model;
