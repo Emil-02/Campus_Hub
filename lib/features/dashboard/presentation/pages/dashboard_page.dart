@@ -230,6 +230,12 @@ final class _QuickActions extends StatelessWidget {
   Widget build(BuildContext context) {
     final actions = [
       (
+        'dashboard-action-capture',
+        Icons.auto_awesome,
+        'Tangkap',
+        RoutePaths.smartCapture,
+      ),
+      (
         'dashboard-action-tasks',
         Icons.task_alt_outlined,
         'Tugas',

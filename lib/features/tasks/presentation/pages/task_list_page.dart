@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../../core/router/route_paths.dart';
 import '../../../courses/presentation/providers/course_provider.dart';
 import '../../domain/entities/task_entity.dart';
 import '../providers/task_provider.dart';
@@ -145,6 +147,13 @@ final class _TaskListPageState extends ConsumerState<TaskListPage> {
     );
   }
 
+  Future<void> _openSmartCapture() async {
+    final saved = await context.push<bool>(RoutePaths.smartCapture);
+    if (saved == true && mounted) {
+      await ref.read(taskControllerProvider.notifier).loadTasks();
+    }
+  }
+
   void _showResultSnackBar(bool success, String successMessage) {
     if (!mounted) {
       return;
@@ -166,6 +175,12 @@ final class _TaskListPageState extends ConsumerState<TaskListPage> {
       appBar: AppBar(
         title: const Text('Tugas'),
         actions: [
+          IconButton(
+            key: const ValueKey('task-smart-capture'),
+            tooltip: 'Tangkap cerdas dari chat/foto',
+            onPressed: _openSmartCapture,
+            icon: const Icon(Icons.auto_awesome),
+          ),
           IconButton(
             key: const ValueKey('task-sort-filter'),
             tooltip: 'Urutkan & filter',

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:table_calendar/table_calendar.dart';
 
+import '../../../../core/router/route_paths.dart';
 import '../../../courses/presentation/widgets/course_color_picker.dart';
 import '../../../tasks/domain/entities/task_entity.dart';
 import '../../../tasks/presentation/widgets/task_widgets.dart';
@@ -64,6 +66,13 @@ final class _CalendarPageState extends ConsumerState<CalendarPage> {
       );
   }
 
+  Future<void> _openSmartCapture() async {
+    final saved = await context.push<bool>(RoutePaths.smartCapture);
+    if (saved == true && mounted) {
+      ref.read(calendarControllerProvider.notifier).loadMonth(_selectedDay);
+    }
+  }
+
   Future<void> _deleteEvent(CalendarEventEntity event) async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -94,7 +103,17 @@ final class _CalendarPageState extends ConsumerState<CalendarPage> {
     final state = ref.watch(calendarControllerProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Kalender')),
+      appBar: AppBar(
+        title: const Text('Kalender'),
+        actions: [
+          IconButton(
+            key: const ValueKey('calendar-smart-capture'),
+            tooltip: 'Tangkap cerdas dari chat/foto',
+            onPressed: _openSmartCapture,
+            icon: const Icon(Icons.auto_awesome),
+          ),
+        ],
+      ),
       floatingActionButton: FloatingActionButton.extended(
         key: const ValueKey('calendar-add-fab'),
         onPressed: _addEvent,

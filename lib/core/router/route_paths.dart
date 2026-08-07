@@ -5,6 +5,7 @@ abstract final class RoutePaths {
   static const register = '/register';
   static const forgotPassword = '/forgot-password';
   static const home = '/home';
+  static const smartCapture = '/capture';
   static const courses = '/courses';
   static const courseImport = '/courses/import';
   static const schedules = '/schedules';

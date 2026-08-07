@@ -1,8 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:http/http.dart' as http;
-
+import '../../../../core/ai/gemini_client.dart';
 import '../../domain/entities/imported_course_entity.dart';
 import '../models/imported_course_model.dart';
 
@@ -23,17 +22,9 @@ abstract interface class KrsScanRemoteDataSource {
 
 /// Reads KRS photos with the Gemini generateContent API.
 final class GeminiKrsScanDataSource implements KrsScanRemoteDataSource {
-  GeminiKrsScanDataSource({
-    required String? apiKey,
-    http.Client? client,
-    String model = 'gemini-flash-latest',
-  }) : _apiKey = apiKey,
-       _client = client ?? http.Client(),
-       _model = model;
+  GeminiKrsScanDataSource({required GeminiClient client}) : _client = client;
 
-  final String? _apiKey;
-  final http.Client _client;
-  final String _model;
+  final GeminiClient _client;
 
   static const _prompt = '''
 Kamu membaca foto tabel KRS/jadwal kuliah mahasiswa Indonesia.
@@ -59,86 +50,22 @@ Aturan:
 
   @override
   Future<List<ImportedCourseEntity>> scanImage(File image) async {
-    final apiKey = _apiKey;
-    if (apiKey == null || apiKey.isEmpty) {
-      throw const KrsScanException(
-        'API key Gemini belum diatur. Tambahkan GEMINI_API_KEY di file .env '
-        'lalu build ulang aplikasi.',
+    final String text;
+    try {
+      text = await _client.generateJson(
+        prompt: _prompt,
+        imageBytes: await image.readAsBytes(),
       );
+    } on GeminiException catch (error) {
+      throw KrsScanException(error.message);
     }
-
-    final bytes = await image.readAsBytes();
-    final uri = Uri.https(
-      'generativelanguage.googleapis.com',
-      '/v1beta/models/$_model:generateContent',
-    );
-    final body = jsonEncode({
-      'contents': [
-        {
-          'parts': [
-            {'text': _prompt},
-            {
-              'inline_data': {
-                'mime_type': 'image/jpeg',
-                'data': base64Encode(bytes),
-              },
-            },
-          ],
-        },
-      ],
-      'generationConfig': {
-        'temperature': 0,
-        'response_mime_type': 'application/json',
-      },
-    });
-
-    final response = await _client
-        .post(
-          uri,
-          headers: {
-            'Content-Type': 'application/json',
-            'x-goog-api-key': apiKey,
-          },
-          body: body,
-        )
-        .timeout(const Duration(seconds: 90));
-
-    if (response.statusCode == 400 || response.statusCode == 403) {
-      throw const KrsScanException(
-        'API key Gemini tidak valid. Periksa GEMINI_API_KEY di file .env.',
-      );
-    }
-    if (response.statusCode == 429) {
-      throw const KrsScanException(
-        'Kuota Gemini habis sementara. Tunggu sebentar lalu coba lagi.',
-      );
-    }
-    if (response.statusCode != 200) {
-      throw KrsScanException(
-        'Layanan AI bermasalah (kode ${response.statusCode}). Coba lagi.',
-      );
-    }
-
-    return _parseCourses(response.body);
+    return _parseCourses(text);
   }
 
-  List<ImportedCourseEntity> _parseCourses(String responseBody) {
-    final Object? decodedResponse;
-    try {
-      decodedResponse = jsonDecode(responseBody);
-    } on FormatException {
-      throw const KrsScanException('Respons AI tidak dapat dibaca. Coba lagi.');
-    }
-    final text = _extractText(decodedResponse);
-    if (text == null) {
-      throw const KrsScanException(
-        'AI tidak mengembalikan hasil. Coba foto yang lebih jelas.',
-      );
-    }
-
+  List<ImportedCourseEntity> _parseCourses(String text) {
     final Object? decoded;
     try {
-      decoded = jsonDecode(_stripCodeFence(text));
+      decoded = jsonDecode(GeminiClient.stripCodeFence(text));
     } on FormatException {
       throw const KrsScanException(
         'Tabel tidak terbaca dari foto. Coba foto yang lebih jelas dan lurus.',
@@ -162,39 +89,5 @@ Aturan:
       );
     }
     return courses;
-  }
-
-  String? _extractText(Object? response) {
-    if (response is! Map<String, dynamic>) {
-      return null;
-    }
-    final candidates = response['candidates'];
-    if (candidates is! List || candidates.isEmpty) {
-      return null;
-    }
-    final content = (candidates.first as Map<String, dynamic>)['content'];
-    if (content is! Map<String, dynamic>) {
-      return null;
-    }
-    final parts = content['parts'];
-    if (parts is! List) {
-      return null;
-    }
-    final text = parts
-        .whereType<Map<String, dynamic>>()
-        .map((part) => part['text'])
-        .whereType<String>()
-        .join();
-    return text.isEmpty ? null : text;
-  }
-
-  String _stripCodeFence(String text) {
-    final trimmed = text.trim();
-    if (!trimmed.startsWith('```')) {
-      return trimmed;
-    }
-    return trimmed
-        .replaceFirst(RegExp(r'^```[a-zA-Z]*\s*'), '')
-        .replaceFirst(RegExp(r'```\s*$'), '');
   }
 }
