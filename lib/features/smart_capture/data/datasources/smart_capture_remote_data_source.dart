@@ -71,6 +71,9 @@ Aturan:
 - "deskripsi": detail penting lain dari pesan (format pengumpulan, link, catatan).
 - "tanggal": simpulkan tanggal pasti dari kata relatif ("besok", "Jumat depan",
   "minggu depan") dihitung dari hari ini $today. Jika tidak disebut, null.
+- Deadline tugas dan event umumnya di MASA DEPAN: jika tanggal yang tertulis
+  tidak menyebut tahun dan hasilnya sudah lewat dari $today, pakai tanggal
+  yang akan datang berikutnya (bulan/tahun berikut).
 - "jam": jam deadline/mulai jika disebut (contoh "23:59", "13:00"), selain itu null.
 - "mata_kuliah": pilih PERSIS salah satu dari daftar mata kuliah pengguna jika
   pesan cocok dengan salah satunya (singkatan seperti "IMK" boleh dicocokkan),

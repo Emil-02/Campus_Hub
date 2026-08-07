@@ -56,20 +56,32 @@ final class _SmartCapturePageState extends ConsumerState<SmartCapturePage> {
 
   Future<void> _saveSelected() async {
     final controller = ref.read(smartCaptureControllerProvider.notifier);
+    final rowsBefore = ref.read(smartCaptureControllerProvider).rows;
+    final eventDates = [
+      for (final row in rowsBefore)
+        if (row.selected && row.kind == CapturedItemKind.event)
+          row.date ?? DateTime.now(),
+    ];
     final success = await controller.saveSelected();
     if (!mounted) {
       return;
     }
     if (success) {
       final state = ref.read(smartCaptureControllerProvider);
+      final dateFormat = DateFormat('d MMM', 'id_ID');
+      final eventDatesLabel = eventDates.map(dateFormat.format).join(', ');
       final parts = <String>[
         if (state.savedTasks > 0) '${state.savedTasks} tugas',
-        if (state.savedEvents > 0) '${state.savedEvents} event',
+        if (state.savedEvents > 0)
+          '${state.savedEvents} event di kalender ($eventDatesLabel)',
       ];
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
         ..showSnackBar(
-          SnackBar(content: Text('Berhasil menyimpan ${parts.join(' dan ')}.')),
+          SnackBar(
+            content: Text('Berhasil menyimpan ${parts.join(' dan ')}.'),
+            duration: const Duration(seconds: 6),
+          ),
         );
       context.pop(true);
     }
@@ -339,6 +351,9 @@ final class _CapturedRowCard extends ConsumerWidget {
     final controller = ref.read(smartCaptureControllerProvider.notifier);
     final row = state.rows[index];
     final isTask = row.kind == CapturedItemKind.task;
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final isPast = row.date != null && row.date!.isBefore(today);
     final dateLabel = row.date == null
         ? (isTask ? 'Tanpa deadline' : 'Pilih tanggal')
         : DateFormat('EEE, d MMM yyyy', 'id_ID').format(row.date!);
@@ -409,14 +424,23 @@ final class _CapturedRowCard extends ConsumerWidget {
                 runSpacing: 8,
                 children: [
                   ActionChip(
-                    avatar: const Icon(Icons.calendar_today, size: 16),
-                    label: Text(dateLabel),
+                    avatar: Icon(
+                      Icons.calendar_today,
+                      size: 16,
+                      color: isPast ? theme.colorScheme.error : null,
+                    ),
+                    label: Text(
+                      isPast ? '$dateLabel (lewat)' : dateLabel,
+                      style: isPast
+                          ? TextStyle(color: theme.colorScheme.error)
+                          : null,
+                    ),
                     onPressed: () async {
                       final picked = await showDatePicker(
                         context: context,
                         initialDate: row.date ?? DateTime.now(),
                         firstDate: DateTime.now().subtract(
-                          const Duration(days: 1),
+                          const Duration(days: 366),
                         ),
                         lastDate: DateTime.now().add(const Duration(days: 365)),
                       );
