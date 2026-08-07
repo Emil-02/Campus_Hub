@@ -30,6 +30,17 @@ final class ImageService {
     return _compress(file);
   }
 
+  /// Picks a document photo at high resolution for AI table reading.
+  Future<File?> pickKrsPhoto({required bool fromCamera}) async {
+    final picked = await _picker.pickImage(
+      source: fromCamera ? ImageSource.camera : ImageSource.gallery,
+      maxWidth: 2560,
+      maxHeight: 2560,
+      imageQuality: 92,
+    );
+    return picked == null ? null : File(picked.path);
+  }
+
   Future<File> _compress(File file) async {
     final targetPath =
         '${file.path}_compressed_${DateTime.now().millisecondsSinceEpoch}.jpg';

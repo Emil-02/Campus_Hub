@@ -6,7 +6,6 @@ import 'package:campusmate/features/schedules/domain/repositories/schedule_repos
 import 'package:campusmate/features/schedules/presentation/providers/schedule_provider.dart';
 import 'package:campusmate/features/schedules/presentation/providers/schedule_state.dart';
 import 'package:campusmate/services/notification_service.dart';
-import 'package:campusmate/services/service_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 

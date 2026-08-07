@@ -9,6 +9,7 @@ import '../../features/auth/presentation/pages/register_page.dart';
 import '../../features/auth/presentation/providers/auth_provider.dart';
 import '../../features/auth/presentation/providers/auth_state.dart';
 import '../../features/courses/presentation/pages/course_management_page.dart';
+import '../../features/courses/presentation/pages/krs_import_page.dart';
 import '../../features/dashboard/presentation/pages/dashboard_page.dart';
 import '../../features/profile/presentation/pages/change_password_page.dart';
 import '../../features/profile/presentation/pages/edit_profile_page.dart';
@@ -78,6 +79,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: RoutePaths.courses,
         builder: (context, state) => const CourseManagementPage(),
+      ),
+      GoRoute(
+        path: RoutePaths.courseImport,
+        builder: (context, state) => const KrsImportPage(),
       ),
       GoRoute(
         path: RoutePaths.schedules,

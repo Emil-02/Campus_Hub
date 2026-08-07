@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../../core/router/route_paths.dart';
 import '../../domain/entities/course_entity.dart';
 import '../providers/course_provider.dart';
 import '../providers/course_state.dart';
@@ -43,6 +45,13 @@ final class _CourseManagementPageState
           color: result.color,
         );
     _showResultSnackBar(saved, 'Mata kuliah ditambahkan.');
+  }
+
+  Future<void> _importFromPhoto() async {
+    final imported = await context.push<bool>(RoutePaths.courseImport);
+    if (imported == true && mounted) {
+      await ref.read(courseControllerProvider.notifier).loadCourses();
+    }
   }
 
   Future<void> _editCourse(CourseEntity course) async {
@@ -110,7 +119,17 @@ final class _CourseManagementPageState
     final state = ref.watch(courseControllerProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Mata Kuliah')),
+      appBar: AppBar(
+        title: const Text('Mata Kuliah'),
+        actions: [
+          IconButton(
+            key: const ValueKey('course-scan-action'),
+            tooltip: 'Impor dari foto KRS',
+            icon: const Icon(Icons.document_scanner_outlined),
+            onPressed: state.isMutating ? null : _importFromPhoto,
+          ),
+        ],
+      ),
       floatingActionButton: FloatingActionButton.extended(
         key: const ValueKey('course-add-fab'),
         onPressed: state.isMutating ? null : _addCourse,
