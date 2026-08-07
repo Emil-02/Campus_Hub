@@ -148,85 +148,82 @@ void main() {
 
   tearDown(() => container.dispose());
 
-  test(
-    'full flow: create → conflict → reminder → edit → delete',
-    () async {
-      final controller = container.read(scheduleControllerProvider.notifier);
+  test('full flow: create → conflict → reminder → edit → delete', () async {
+    final controller = container.read(scheduleControllerProvider.notifier);
 
-      await controller.loadSchedules();
-      expect(container.read(scheduleControllerProvider).schedules, isEmpty);
+    await controller.loadSchedules();
+    expect(container.read(scheduleControllerProvider).schedules, isEmpty);
 
-      // Create the Monday morning class.
-      final created = await controller.createSchedule(
-        courseId: 'course-1',
+    // Create the Monday morning class.
+    final created = await controller.createSchedule(
+      courseId: 'course-1',
+      dayOfWeek: 1,
+      startTime: '08:00',
+      endTime: '09:40',
+      room: 'R. 3.2',
+    );
+    expect(created, isTrue);
+    var state = container.read(scheduleControllerProvider);
+    expect(state.schedules, hasLength(1));
+    final schedule = state.schedules.single;
+    // A weekly reminder is registered on create.
+    expect(notifications.scheduledIds, contains(schedule.id));
+
+    // BR-02: an overlapping Monday slot is reported as a conflict.
+    final conflicts = await controller.checkConflict(
+      dayOfWeek: 1,
+      startTime: '09:00',
+      endTime: '10:40',
+    );
+    expect(conflicts, hasLength(1));
+    expect(conflicts.single.scheduleId, schedule.id);
+
+    // A non-overlapping slot on another day is free.
+    expect(
+      await controller.checkConflict(
+        dayOfWeek: 2,
+        startTime: '08:00',
+        endTime: '09:40',
+      ),
+      isEmpty,
+    );
+
+    // The schedule itself is excluded when editing its own slot.
+    expect(
+      await controller.checkConflict(
         dayOfWeek: 1,
         startTime: '08:00',
         endTime: '09:40',
-        room: 'R. 3.2',
-      );
-      expect(created, isTrue);
-      var state = container.read(scheduleControllerProvider);
-      expect(state.schedules, hasLength(1));
-      final schedule = state.schedules.single;
-      // A weekly reminder is registered on create.
-      expect(notifications.scheduledIds, contains(schedule.id));
+        excludeScheduleId: schedule.id,
+      ),
+      isEmpty,
+    );
 
-      // BR-02: an overlapping Monday slot is reported as a conflict.
-      final conflicts = await controller.checkConflict(
-        dayOfWeek: 1,
-        startTime: '09:00',
-        endTime: '10:40',
-      );
-      expect(conflicts, hasLength(1));
-      expect(conflicts.single.scheduleId, schedule.id);
+    // Edit: move the class to Tuesday and re-register the reminder.
+    notifications.scheduledIds.clear();
+    final updated = await controller.updateSchedule(
+      id: schedule.id,
+      courseId: 'course-1',
+      dayOfWeek: 2,
+      startTime: '13:00',
+      endTime: '14:40',
+      room: 'Lab 2',
+    );
+    expect(updated, isTrue);
+    state = container.read(scheduleControllerProvider);
+    expect(state.schedules.single.dayOfWeek, 2);
+    expect(state.schedules.single.room, 'Lab 2');
+    expect(notifications.scheduledIds, contains(schedule.id));
 
-      // A non-overlapping slot on another day is free.
-      expect(
-        await controller.checkConflict(
-          dayOfWeek: 2,
-          startTime: '08:00',
-          endTime: '09:40',
-        ),
-        isEmpty,
-      );
-
-      // The schedule itself is excluded when editing its own slot.
-      expect(
-        await controller.checkConflict(
-          dayOfWeek: 1,
-          startTime: '08:00',
-          endTime: '09:40',
-          excludeScheduleId: schedule.id,
-        ),
-        isEmpty,
-      );
-
-      // Edit: move the class to Tuesday and re-register the reminder.
-      notifications.scheduledIds.clear();
-      final updated = await controller.updateSchedule(
-        id: schedule.id,
-        courseId: 'course-1',
-        dayOfWeek: 2,
-        startTime: '13:00',
-        endTime: '14:40',
-        room: 'Lab 2',
-      );
-      expect(updated, isTrue);
-      state = container.read(scheduleControllerProvider);
-      expect(state.schedules.single.dayOfWeek, 2);
-      expect(state.schedules.single.room, 'Lab 2');
-      expect(notifications.scheduledIds, contains(schedule.id));
-
-      // Delete: list empties and the reminder is cancelled.
-      final deleted = await controller.deleteSchedule(schedule.id);
-      expect(deleted, isTrue);
-      expect(
-        container.read(scheduleControllerProvider),
-        const ScheduleState.loaded([]),
-      );
-      expect(notifications.cancelledIds, contains(schedule.id));
-    },
-  );
+    // Delete: list empties and the reminder is cancelled.
+    final deleted = await controller.deleteSchedule(schedule.id);
+    expect(deleted, isTrue);
+    expect(
+      container.read(scheduleControllerProvider),
+      const ScheduleState.loaded([]),
+    );
+    expect(notifications.cancelledIds, contains(schedule.id));
+  });
 
   test('two classes on the same day without overlap never conflict', () async {
     final controller = container.read(scheduleControllerProvider.notifier);

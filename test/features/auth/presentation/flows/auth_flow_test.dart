@@ -142,53 +142,59 @@ void main() {
     );
   });
 
-  test('login with wrong password fails and recovers with correct one', () async {
-    final controller = container.read(authControllerProvider.notifier);
-    await controller.initialize();
-    await controller.signUp(
-      email: 'siti@student.unismuh.ac.id',
-      password: 'BenarSekali99',
-      fullName: 'Siti Aminah',
-    );
-    await controller.signOut();
+  test(
+    'login with wrong password fails and recovers with correct one',
+    () async {
+      final controller = container.read(authControllerProvider.notifier);
+      await controller.initialize();
+      await controller.signUp(
+        email: 'siti@student.unismuh.ac.id',
+        password: 'BenarSekali99',
+        fullName: 'Siti Aminah',
+      );
+      await controller.signOut();
 
-    await controller.signInWithEmail(
-      email: 'siti@student.unismuh.ac.id',
-      password: 'salah-total',
-    );
-    final failed = container.read(authControllerProvider);
-    expect(failed.status, AuthStatus.failure);
-    expect(failed.errorMessage, contains('Email atau password salah'));
+      await controller.signInWithEmail(
+        email: 'siti@student.unismuh.ac.id',
+        password: 'salah-total',
+      );
+      final failed = container.read(authControllerProvider);
+      expect(failed.status, AuthStatus.failure);
+      expect(failed.errorMessage, contains('Email atau password salah'));
 
-    await controller.signInWithEmail(
-      email: 'siti@student.unismuh.ac.id',
-      password: 'BenarSekali99',
-    );
-    expect(
-      container.read(authControllerProvider).status,
-      AuthStatus.authenticated,
-    );
-  });
+      await controller.signInWithEmail(
+        email: 'siti@student.unismuh.ac.id',
+        password: 'BenarSekali99',
+      );
+      expect(
+        container.read(authControllerProvider).status,
+        AuthStatus.authenticated,
+      );
+    },
+  );
 
-  test('restart after login restores the session (persisted bootstrap)', () async {
-    final controller = container.read(authControllerProvider.notifier);
-    await controller.initialize();
-    await controller.signUp(
-      email: 'andi@student.unismuh.ac.id',
-      password: 'PasswordAman1',
-      fullName: 'Andi Wijaya',
-    );
+  test(
+    'restart after login restores the session (persisted bootstrap)',
+    () async {
+      final controller = container.read(authControllerProvider.notifier);
+      await controller.initialize();
+      await controller.signUp(
+        email: 'andi@student.unismuh.ac.id',
+        password: 'PasswordAman1',
+        fullName: 'Andi Wijaya',
+      );
 
-    // Simulate app restart: a fresh container reusing the same backend.
-    final restarted = ProviderContainer(
-      overrides: [authRepositoryProvider.overrideWithValue(repository)],
-    );
-    addTearDown(restarted.dispose);
+      // Simulate app restart: a fresh container reusing the same backend.
+      final restarted = ProviderContainer(
+        overrides: [authRepositoryProvider.overrideWithValue(repository)],
+      );
+      addTearDown(restarted.dispose);
 
-    await restarted.read(authControllerProvider.notifier).initialize();
+      await restarted.read(authControllerProvider.notifier).initialize();
 
-    final state = restarted.read(authControllerProvider);
-    expect(state.status, AuthStatus.authenticated);
-    expect(state.user?.email, 'andi@student.unismuh.ac.id');
-  });
+      final state = restarted.read(authControllerProvider);
+      expect(state.status, AuthStatus.authenticated);
+      expect(state.user?.email, 'andi@student.unismuh.ac.id');
+    },
+  );
 }

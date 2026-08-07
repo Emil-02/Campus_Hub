@@ -212,9 +212,7 @@ final class InMemoryTaskRepository implements TaskRepository {
   Future<void> deleteChecklistItem(String id) async {
     for (final task in _tasks.values) {
       if (!task.checklist.any((item) => item.id == id)) continue;
-      final checklist = task.checklist
-          .where((item) => item.id != id)
-          .toList();
+      final checklist = task.checklist.where((item) => item.id != id).toList();
       _tasks[task.id] = _withChecklist(task, checklist);
       return;
     }
@@ -309,10 +307,7 @@ void main() {
 
       // Filter: completed list shows it, active list does not.
       controller.setFilter(TaskListFilter.completed);
-      expect(
-        container.read(taskControllerProvider).visibleTasks,
-        hasLength(1),
-      );
+      expect(container.read(taskControllerProvider).visibleTasks, hasLength(1));
       controller.setFilter(TaskListFilter.active);
       expect(container.read(taskControllerProvider).visibleTasks, isEmpty);
       controller.setFilter(TaskListFilter.all);
@@ -344,28 +339,31 @@ void main() {
     },
   );
 
-  test('editing a task keeps list consistent and reschedules reminders', () async {
-    final controller = container.read(taskControllerProvider.notifier);
-    await controller.loadTasks();
-    await controller.createTask(
-      title: 'Kuis modul 3',
-      deadline: DateTime.now().add(const Duration(days: 5)),
-      priority: TaskPriority.medium,
-    );
-    final task = container.read(taskControllerProvider).tasks.single;
-    notifications.scheduledTaskIds.clear();
+  test(
+    'editing a task keeps list consistent and reschedules reminders',
+    () async {
+      final controller = container.read(taskControllerProvider.notifier);
+      await controller.loadTasks();
+      await controller.createTask(
+        title: 'Kuis modul 3',
+        deadline: DateTime.now().add(const Duration(days: 5)),
+        priority: TaskPriority.medium,
+      );
+      final task = container.read(taskControllerProvider).tasks.single;
+      notifications.scheduledTaskIds.clear();
 
-    final updated = await controller.updateTask(
-      id: task.id,
-      title: 'Kuis modul 3 (revisi)',
-      deadline: DateTime.now().add(const Duration(days: 1)),
-      priority: TaskPriority.urgent,
-    );
+      final updated = await controller.updateTask(
+        id: task.id,
+        title: 'Kuis modul 3 (revisi)',
+        deadline: DateTime.now().add(const Duration(days: 1)),
+        priority: TaskPriority.urgent,
+      );
 
-    expect(updated, isTrue);
-    final state = container.read(taskControllerProvider);
-    expect(state.tasks.single.title, 'Kuis modul 3 (revisi)');
-    expect(state.tasks.single.priority, TaskPriority.urgent);
-    expect(notifications.scheduledTaskIds, contains(task.id));
-  });
+      expect(updated, isTrue);
+      final state = container.read(taskControllerProvider);
+      expect(state.tasks.single.title, 'Kuis modul 3 (revisi)');
+      expect(state.tasks.single.priority, TaskPriority.urgent);
+      expect(notifications.scheduledTaskIds, contains(task.id));
+    },
+  );
 }
