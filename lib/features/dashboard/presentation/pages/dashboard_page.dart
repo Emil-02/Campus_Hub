@@ -45,8 +45,7 @@ final class _DashboardPageState extends ConsumerState<DashboardPage> {
           onRefresh: () =>
               ref.read(dashboardControllerProvider.notifier).loadDashboard(),
           child: switch (state.status) {
-            DashboardStatus.initial ||
-            DashboardStatus.loading => const Center(
+            DashboardStatus.initial || DashboardStatus.loading => const Center(
               child: CircularProgressIndicator(),
             ),
             _ => ListView(
@@ -438,10 +437,7 @@ final class _TodayScheduleCard extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.only(right: 16),
               child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 8,
-                  vertical: 4,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   color: colorScheme.primary,
                   borderRadius: BorderRadius.circular(999),
@@ -488,10 +484,7 @@ final class _DeadlineCard extends StatelessWidget {
         trailing: task.course == null
             ? null
             : Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 8,
-                  vertical: 2,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
                   color: courseColorFromHex(
                     task.course!.color,

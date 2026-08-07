@@ -210,10 +210,7 @@ final class SmartCaptureController extends Notifier<SmartCaptureState> {
   }
 
   String? _normalize(String? value) {
-    final cleaned = value
-        ?.toLowerCase()
-        .replaceAll(RegExp(r'\s+'), ' ')
-        .trim();
+    final cleaned = value?.toLowerCase().replaceAll(RegExp(r'\s+'), ' ').trim();
     return (cleaned == null || cleaned.isEmpty) ? null : cleaned;
   }
 
