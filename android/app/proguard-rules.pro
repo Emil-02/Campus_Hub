@@ -1,5 +1,11 @@
 # Keep rules for release (R8).
 
+# Flutter registers plugins via reflection on GeneratedPluginRegistrant;
+# without these keeps R8 strips it and NO plugin works in release.
+-keep class io.flutter.plugins.GeneratedPluginRegistrant { *; }
+-keep class io.flutter.plugin.** { *; }
+-keep class io.flutter.embedding.engine.plugins.** { *; }
+
 # flutter_local_notifications uses Gson reflection for scheduled payloads.
 -keep class com.dexterous.** { *; }
 -keep class com.google.gson.** { *; }

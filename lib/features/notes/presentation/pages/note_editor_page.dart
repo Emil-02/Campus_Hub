@@ -197,17 +197,17 @@ final class _NoteEditorPageState extends ConsumerState<NoteEditorPage> {
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: QuillEditor.basic(
-                  configurations: QuillEditorConfigurations(
-                    controller: _quillController,
+                  controller: _quillController,
+                  config: const QuillEditorConfig(
                     placeholder: 'Tulis isi catatan di sini…',
-                    padding: const EdgeInsets.only(bottom: 16),
+                    padding: EdgeInsets.only(bottom: 16),
                   ),
                 ),
               ),
             ),
-            QuillToolbar.simple(
-              configurations: QuillSimpleToolbarConfigurations(
-                controller: _quillController,
+            QuillSimpleToolbar(
+              controller: _quillController,
+              config: const QuillSimpleToolbarConfig(
                 multiRowsDisplay: false,
                 showFontFamily: false,
                 showFontSize: false,
