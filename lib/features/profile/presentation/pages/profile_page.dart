@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/router/route_paths.dart';
+import '../../../../core/theme/theme_mode_provider.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../auth/presentation/providers/auth_state.dart';
 import '../../domain/entities/profile_entity.dart';
@@ -156,7 +157,7 @@ final class _ProfilePageState extends ConsumerState<ProfilePage> {
   }
 }
 
-final class _ProfileContent extends StatelessWidget {
+final class _ProfileContent extends ConsumerWidget {
   const _ProfileContent({
     required this.profile,
     required this.email,
@@ -174,7 +175,7 @@ final class _ProfileContent extends StatelessWidget {
   final VoidCallback onLogout;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final academicParts = <String>[
@@ -300,6 +301,16 @@ final class _ProfileContent extends StatelessWidget {
                 title: const Text('Ubah Password'),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () => context.push(RoutePaths.changePassword),
+              ),
+              const Divider(height: 1),
+              SwitchListTile(
+                key: const ValueKey('profile-theme-toggle'),
+                secondary: const Icon(Icons.dark_mode_outlined),
+                title: const Text('Mode Gelap'),
+                value: ref.watch(themeModeProvider) == ThemeMode.dark,
+                onChanged: (enabled) => ref
+                    .read(themeModeProvider.notifier)
+                    .setDarkEnabled(enabled),
               ),
             ],
           ),

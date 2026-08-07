@@ -4,11 +4,11 @@ import 'package:campusmate/core/router/app_router.dart';
 import 'package:campusmate/core/router/route_paths.dart';
 import 'package:campusmate/features/auth/domain/entities/user_entity.dart';
 import 'package:campusmate/features/auth/domain/repositories/auth_repository.dart';
-import 'package:campusmate/features/auth/presentation/pages/authenticated_home_page.dart';
 import 'package:campusmate/features/auth/presentation/pages/forgot_password_page.dart';
 import 'package:campusmate/features/auth/presentation/pages/login_page.dart';
 import 'package:campusmate/features/auth/presentation/pages/register_page.dart';
 import 'package:campusmate/features/auth/presentation/providers/auth_provider.dart';
+import 'package:campusmate/features/dashboard/presentation/pages/dashboard_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -89,7 +89,7 @@ void main() {
     result.harness.go(RoutePaths.login);
     await tester.pumpAndSettle();
 
-    expect(find.byType(AuthenticatedHomePage), findsOneWidget);
+    expect(find.byType(DashboardPage), findsOneWidget);
     expect(find.byType(LoginPage), findsNothing);
   });
 }
