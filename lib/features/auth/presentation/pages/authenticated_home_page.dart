@@ -76,10 +76,20 @@ final class AuthenticatedHomePage extends ConsumerWidget {
               onTap: () => context.push(RoutePaths.tasks),
             ),
             const SizedBox(height: 8),
-            const _MenuCard(
+            _MenuCard(
+              key: const ValueKey('home-menu-notes'),
               icon: Icons.sticky_note_2_outlined,
               title: 'Catatan',
-              subtitle: 'Segera hadir',
+              subtitle: 'Catatan kuliah dengan rich text',
+              onTap: () => context.push(RoutePaths.notes),
+            ),
+            const SizedBox(height: 8),
+            _MenuCard(
+              key: const ValueKey('home-menu-calendar'),
+              icon: Icons.event_outlined,
+              title: 'Kalender',
+              subtitle: 'Deadline & event dalam sebulan',
+              onTap: () => context.push(RoutePaths.calendar),
             ),
             const SizedBox(height: 8),
             _MenuCard(

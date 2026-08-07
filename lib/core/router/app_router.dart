@@ -15,6 +15,8 @@ import '../../features/profile/presentation/pages/edit_profile_page.dart';
 import '../../features/profile/presentation/pages/profile_page.dart';
 import '../../features/schedules/presentation/pages/schedule_page.dart';
 import '../../features/tasks/presentation/pages/task_list_page.dart';
+import '../../features/notes/presentation/pages/note_list_page.dart';
+import '../../features/calendar/presentation/pages/calendar_page.dart';
 import 'route_paths.dart';
 
 /// Notifies GoRouter when the Riverpod authentication state changes.
@@ -84,6 +86,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: RoutePaths.tasks,
         builder: (context, state) => const TaskListPage(),
+      ),
+      GoRoute(
+        path: RoutePaths.notes,
+        builder: (context, state) => const NoteListPage(),
+      ),
+      GoRoute(
+        path: RoutePaths.calendar,
+        builder: (context, state) => const CalendarPage(),
       ),
       GoRoute(
         path: RoutePaths.profile,
