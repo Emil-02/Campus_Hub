@@ -102,8 +102,7 @@ final class _CalendarPageState extends ConsumerState<CalendarPage> {
         label: const Text('Event'),
       ),
       body: switch (state.status) {
-        CalendarStatus.initial ||
-        CalendarStatus.loading => const Center(
+        CalendarStatus.initial || CalendarStatus.loading => const Center(
           child: CircularProgressIndicator(),
         ),
         CalendarStatus.failure when state.events.isEmpty => Center(
@@ -135,13 +134,12 @@ final class _CalendarPageState extends ConsumerState<CalendarPage> {
                 locale: 'id_ID',
                 firstDay: DateTime(2020),
                 lastDay: DateTime(2035),
-                focusedDay: state.focusedMonth.month == _selectedDay.month &&
+                focusedDay:
+                    state.focusedMonth.month == _selectedDay.month &&
                         state.focusedMonth.year == _selectedDay.year
                     ? _selectedDay
                     : state.focusedMonth,
-                availableCalendarFormats: const {
-                  CalendarFormat.month: 'Bulan',
-                },
+                availableCalendarFormats: const {CalendarFormat.month: 'Bulan'},
                 startingDayOfWeek: StartingDayOfWeek.monday,
                 selectedDayPredicate: (day) => isSameDay(day, _selectedDay),
                 eventLoader: (day) => List.filled(
@@ -406,9 +404,7 @@ final class _AddEventDialogState extends State<_AddEventDialog> {
                 key: const ValueKey('event-date'),
                 contentPadding: EdgeInsets.zero,
                 leading: const Icon(Icons.event_outlined),
-                title: Text(
-                  '${_date.day}/${_date.month}/${_date.year}',
-                ),
+                title: Text('${_date.day}/${_date.month}/${_date.year}'),
                 onTap: _pickDate,
               ),
               ListTile(
@@ -416,9 +412,7 @@ final class _AddEventDialogState extends State<_AddEventDialog> {
                 contentPadding: EdgeInsets.zero,
                 leading: const Icon(Icons.schedule),
                 title: Text(
-                  _time == null
-                      ? 'Sepanjang hari'
-                      : _time!.format(context),
+                  _time == null ? 'Sepanjang hari' : _time!.format(context),
                 ),
                 trailing: _time == null
                     ? null

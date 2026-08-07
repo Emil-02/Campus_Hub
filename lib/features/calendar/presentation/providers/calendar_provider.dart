@@ -49,10 +49,7 @@ final class CalendarController extends Notifier<CalendarState> {
     try {
       final start = focused;
       final end = DateTime(focused.year, focused.month + 1, 0);
-      final events = await _repository.getEventsInRange(
-        start: start,
-        end: end,
-      );
+      final events = await _repository.getEventsInRange(start: start, end: end);
       final tasks = await ref.read(taskRepositoryProvider).getTasks();
       final deadlineTasks = tasks
           .where(

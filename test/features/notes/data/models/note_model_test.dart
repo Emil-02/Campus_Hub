@@ -6,11 +6,7 @@ void main() {
   Map<String, dynamic> validJson() => <String, dynamic>{
     'id': 'note-1',
     'course_id': 'course-1',
-    'courses': {
-      'id': 'course-1',
-      'name': 'Struktur Data',
-      'color': '#4A90D9',
-    },
+    'courses': {'id': 'course-1', 'name': 'Struktur Data', 'color': '#4A90D9'},
     'title': 'Ringkasan bab 1',
     'content': '[{"insert":"Halo\\n"}]',
     'content_plain': 'Halo',
