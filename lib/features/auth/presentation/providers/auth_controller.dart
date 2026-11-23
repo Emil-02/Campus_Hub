@@ -1,3 +1,4 @@
+import '../../../../core/network/timeout_http_client.dart';
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
@@ -201,6 +202,10 @@ final class AuthController extends Notifier<AuthState> {
 
   String _safeErrorMessage(Object error) {
     debugPrint('Auth error: $error');
+    // TimeoutException keeps its own message (used by the Google sign-in timeout).
+    if (error is! TimeoutException && isNetworkError(error)) {
+      return 'Tidak dapat terhubung ke server. Periksa koneksi internet.';
+    }
     if (error is AuthException) {
       return _authExceptionMessage(error);
     }

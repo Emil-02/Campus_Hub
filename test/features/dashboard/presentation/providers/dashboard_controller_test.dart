@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:campusmate/features/calendar/domain/entities/calendar_event_entity.dart';
 import 'package:campusmate/features/dashboard/domain/entities/dashboard_stats_entity.dart';
 import 'package:campusmate/features/dashboard/domain/repositories/dashboard_repository.dart';
@@ -8,6 +10,8 @@ import 'package:campusmate/features/tasks/domain/entities/task_entity.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:supabase_flutter/supabase_flutter.dart'
+    show AuthRetryableFetchException;
 
 class MockDashboardRepository extends Mock implements DashboardRepository {}
 
@@ -115,5 +119,64 @@ void main() {
     expect(state.upcomingEvents, [event]);
     expect(state.stats, stats);
     expect(state.errorMessage, 'Data ringkasan tidak valid.');
+  });
+
+  testWidgets('loadDashboard stops loading when the server never responds', (
+    tester,
+  ) async {
+    when(
+      () => repository.getTodaySchedules(),
+    ).thenAnswer((_) => Completer<List<ScheduleEntity>>().future);
+    when(
+      () => repository.getUpcomingDeadlines(),
+    ).thenAnswer((_) => Completer<List<TaskEntity>>().future);
+    when(
+      () => repository.getUpcomingEvents(),
+    ).thenAnswer((_) => Completer<List<CalendarEventEntity>>().future);
+    when(
+      () => repository.getStatistics(),
+    ).thenAnswer((_) => Completer<DashboardStatsEntity>().future);
+
+    final load = container
+        .read(dashboardControllerProvider.notifier)
+        .loadDashboard();
+    expect(
+      container.read(dashboardControllerProvider).status,
+      DashboardStatus.loading,
+    );
+
+    await tester.pump(DashboardController.loadTimeout);
+    await load;
+
+    final state = container.read(dashboardControllerProvider);
+    expect(state.status, DashboardStatus.failure);
+    expect(
+      state.errorMessage,
+      'Tidak dapat terhubung ke server. Periksa koneksi internet.',
+    );
+  });
+
+  test('loadDashboard reports an unreachable server', () async {
+    when(() => repository.getTodaySchedules()).thenAnswer(
+      (_) async => throw AuthRetryableFetchException(
+        message: 'Failed host lookup: example.supabase.co',
+      ),
+    );
+    when(
+      () => repository.getUpcomingDeadlines(),
+    ).thenAnswer((_) async => const []);
+    when(
+      () => repository.getUpcomingEvents(),
+    ).thenAnswer((_) async => const []);
+    when(
+      () => repository.getStatistics(),
+    ).thenAnswer((_) async => const DashboardStatsEntity());
+
+    await container.read(dashboardControllerProvider.notifier).loadDashboard();
+
+    expect(
+      container.read(dashboardControllerProvider).errorMessage,
+      'Tidak dapat terhubung ke server. Periksa koneksi internet.',
+    );
   });
 }

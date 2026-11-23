@@ -1,5 +1,5 @@
+import '../../../../core/network/timeout_http_client.dart';
 import 'dart:async';
-import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -114,7 +114,7 @@ final class CourseController extends Notifier<CourseState> {
       }
       return 'Gagal menyimpan ke server. Coba lagi.';
     }
-    if (error is SocketException || error is TimeoutException) {
+    if (isNetworkError(error)) {
       return 'Tidak dapat terhubung ke server. Periksa koneksi internet.';
     }
     if (error is StateError) {

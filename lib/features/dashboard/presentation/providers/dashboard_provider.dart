@@ -1,5 +1,5 @@
+import '../../../../core/network/timeout_http_client.dart';
 import 'dart:async';
-import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -37,6 +37,9 @@ final dashboardControllerProvider =
 
 /// Loads today's schedule, nearest deadlines, and task stats (DASH-01..04).
 final class DashboardController extends Notifier<DashboardState> {
+  /// Upper bound for the whole dashboard load, including a token refresh.
+  static const loadTimeout = Duration(seconds: 20);
+
   DashboardRepository get _repository => ref.read(dashboardRepositoryProvider);
 
   @override
@@ -48,16 +51,7 @@ final class DashboardController extends Notifier<DashboardState> {
       state = const DashboardState.loading();
     }
     try {
-      final schedulesFuture = _repository.getTodaySchedules();
-      final tasksFuture = _repository.getUpcomingDeadlines();
-      final eventsFuture = _repository.getUpcomingEvents();
-      final statsFuture = _repository.getStatistics();
-      state = DashboardState.loaded(
-        todaySchedules: await schedulesFuture,
-        upcomingTasks: await tasksFuture,
-        upcomingEvents: await eventsFuture,
-        stats: await statsFuture,
-      );
+      state = await _fetchDashboard().timeout(loadTimeout);
     } catch (error) {
       state = DashboardState.failure(
         _safeErrorMessage(error),
@@ -69,12 +63,25 @@ final class DashboardController extends Notifier<DashboardState> {
     }
   }
 
+  Future<DashboardState> _fetchDashboard() async {
+    final schedulesFuture = _repository.getTodaySchedules();
+    final tasksFuture = _repository.getUpcomingDeadlines();
+    final eventsFuture = _repository.getUpcomingEvents();
+    final statsFuture = _repository.getStatistics();
+    return DashboardState.loaded(
+      todaySchedules: await schedulesFuture,
+      upcomingTasks: await tasksFuture,
+      upcomingEvents: await eventsFuture,
+      stats: await statsFuture,
+    );
+  }
+
   String _safeErrorMessage(Object error) {
     debugPrint('Dashboard error: $error');
     if (error is PostgrestException) {
       return 'Gagal memuat data dari server. Coba lagi.';
     }
-    if (error is SocketException || error is TimeoutException) {
+    if (isNetworkError(error)) {
       return 'Tidak dapat terhubung ke server. Periksa koneksi internet.';
     }
     if (error is StateError) {

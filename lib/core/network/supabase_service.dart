@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../config/environment_config.dart';
+import 'timeout_http_client.dart';
 
 enum SupabaseStartupStatus {
   developmentMode,
@@ -35,6 +36,7 @@ class SupabaseService {
       await Supabase.initialize(
         url: config.supabaseUrl!,
         publishableKey: config.supabaseAnonKey!,
+        httpClient: TimeoutHttpClient(),
       );
       _status = SupabaseStartupStatus.initialized;
     } catch (error, stackTrace) {

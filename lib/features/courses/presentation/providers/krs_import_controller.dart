@@ -1,3 +1,4 @@
+import '../../../../core/network/timeout_http_client.dart';
 import 'dart:async';
 import 'dart:io';
 
@@ -146,7 +147,7 @@ final class KrsImportController extends Notifier<KrsImportState> {
     if (error is KrsScanException) {
       return error.message;
     }
-    if (error is SocketException || error is TimeoutException) {
+    if (isNetworkError(error)) {
       return 'Tidak dapat terhubung ke server. Periksa koneksi internet.';
     }
     return 'Terjadi kesalahan. Coba lagi.';
