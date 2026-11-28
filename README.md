@@ -17,7 +17,7 @@ Dibangun dengan **Flutter** + **Supabase** + **Gemini AI**.
 | ✅ **Tugas** | Deadline, prioritas, checklist sub-tugas (progres otomatis), filter & urutkan, pengingat H-3/H-1, hapus dengan undo |
 | ✨ **Tangkap Cerdas** | Tempel chat WA dosen atau screenshot → AI menyimpulkan tugas & event, tinggal konfirmasi |
 | 📝 **Catatan** | Editor rich text (Quill), terkait mata kuliah, pencarian full-text |
-| 📅 **Kalender** | Kalender bulanan dengan penanda deadline tugas + event kustom |
+| 📅 **Kalender** | Kalender bulanan dengan penanda deadline tugas + event kustom, ekspor bulan yang ditampilkan sebagai berkas .ics |
 | 🏠 **Dashboard** | Jadwal hari ini, deadline terdekat, event mendatang, statistik progres tugas |
 | 🌙 **Mode Gelap** | Tema Material 3 terang/gelap, tersimpan antar sesi |
 

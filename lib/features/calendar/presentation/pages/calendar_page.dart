@@ -1,3 +1,6 @@
+import 'dart:convert';
+
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -8,6 +11,7 @@ import '../../../courses/presentation/widgets/course_color_picker.dart';
 import '../../../tasks/domain/entities/task_entity.dart';
 import '../../../tasks/presentation/widgets/task_widgets.dart';
 import '../../domain/entities/calendar_event_entity.dart';
+import '../../domain/export/icalendar.dart';
 import '../providers/calendar_provider.dart';
 import '../providers/calendar_state.dart';
 
@@ -30,6 +34,34 @@ final class _CalendarPageState extends ConsumerState<CalendarPage> {
         ref.read(calendarControllerProvider.notifier).loadMonth(_selectedDay);
       }
     });
+  }
+
+  Future<void> _exportMonth(CalendarState state) async {
+    final month = state.focusedMonth;
+    try {
+      final content = exportCalendarMonth(
+        month,
+        state.events,
+        state.deadlineTasks,
+        generatedAt: DateTime.now(),
+      );
+      await FilePicker.platform.saveFile(
+        dialogTitle: 'Ekspor kalender',
+        fileName:
+            'CampusMate-${month.year}-${month.month.toString().padLeft(2, '0')}.ics',
+        type: FileType.custom,
+        allowedExtensions: ['ics'],
+        bytes: utf8.encode(content),
+      );
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Gagal mengekspor kalender. Coba lagi.'),
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _addEvent() async {
@@ -106,6 +138,13 @@ final class _CalendarPageState extends ConsumerState<CalendarPage> {
       appBar: AppBar(
         title: const Text('Kalender'),
         actions: [
+          IconButton(
+            tooltip: 'Ekspor kalender bulan ini (.ics)',
+            onPressed: state.status == CalendarStatus.loaded
+                ? () => _exportMonth(state)
+                : null,
+            icon: const Icon(Icons.file_download_outlined),
+          ),
           IconButton(
             key: const ValueKey('calendar-smart-capture'),
             tooltip: 'Tangkap cerdas dari chat/foto',
